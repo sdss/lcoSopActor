@@ -515,15 +515,18 @@ def do_boss_science(cmd, cmdState, actorState):
     if failMsg:
         return fail_command(cmd, cmdState, failMsg)
     finish_command(cmd,cmdState,actorState,finishMsg)
-#...
+
 
 def do_apogee_science(cmd, cmdState, actorState, finishMsg=None):
     """Start an APOGEE science sequence."""
 
     expType = cmdState.expType
+
     if finishMsg is None:
-        finishMsg = "Your Nobel Prize is a little closer!"
-    failMsg = ""            # message to use if we've failed
+        finishMsg = 'Your Nobel Prize is a little closer!'
+
+    failMsg = ''  # message to use if we've failed
+
     stageName = 'expose'
     cmdState.setStageState(stageName, 'running')
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
@@ -532,22 +535,26 @@ def do_apogee_science(cmd, cmdState, actorState, finishMsg=None):
         expTime = cmdState.expTime
         dithers = get_next_apogee_dither_pair(actorState)
 
-        multiCmd = SopMultiCommand(cmd, expTime*len(dithers) + actorState.timeout, cmdState.name)
+        multiCmd = SopMultiCommand(cmd, expTime * len(dithers) + actorState.timeout, cmdState.name)
         multiCmd.append(sopActor.APOGEE, Msg.APOGEE_DITHER_SET,
                         expTime=expTime, dithers=dithers,
                         expType=expType, comment=cmdState.comment)
-        prep_for_science(multiCmd,precondition=True)
-        prep_apogee_shutter(multiCmd,open=True)
+
+        # LCOHACK: commenting this because we do not have an instrument, or lamps,
+        # or basically anything real.
+        # prep_for_science(multiCmd, precondition=True)
+        # prep_apogee_shutter(multiCmd, open=True)
 
         if not multiCmd.run():
-            failMsg = "Failed to take an %s exposure" % (expType)
+            failMsg = 'Failed to take an %s exposure' % (expType)
             break
         cmdState.took_exposure()
 
     # Did we break out of that loop?
     if failMsg:
         return fail_command(cmd, cmdState, failMsg)
-    finish_command(cmd,cmdState,actorState,finishMsg)
+
+    finish_command(cmd, cmdState, actorState, finishMsg)
 
 
 def do_one_manga_dither(cmd, cmdState, actorState):
