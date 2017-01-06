@@ -124,7 +124,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         sopState.gotoField.genKeys(cmd=cmd, trimKeys=oneCommand)
 
-    def doing_science(self,sopState):
+    def doing_science(self, sopState):
         """Return True if any sort of science command is currently running."""
 
         return (sopState.doApogeeScience.cmd and
