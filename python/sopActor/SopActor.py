@@ -125,7 +125,7 @@ class SopActor(actorcore.Actor.SDSSActor):
 
         self.actorState = actorcore.Actor.ActorState(self, self.models)
         self.actorState.guiderState = GuiderState(self.models['guider'])
-        self.actorState.apogeeGang = ApogeeGang()
+        self.actorState.apogeeGang = ApogeeGang(location=self.location)
         myGlobals.actorState = self.actorState
 
         # This is the default set of commands, valid both at APO and LCO
