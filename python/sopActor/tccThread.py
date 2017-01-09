@@ -264,17 +264,18 @@ class SlewHandler(object):
             replyQueue.put(Msg.REPLY, cmd=cmd, success=True)
         return
 
-    def do_slew_lco(self, cmd, replyQueue):
+    def do_slew_lco(self, cmd, replyQueue, screen=True):
         """Commands the TCC at LCO to slew."""
 
         call = self.actorState.actor.cmdr.call
+        screenCmd = '/screen' if screen else ''
 
         if self.ra is not None and self.dec is not None:
             cmd.inform('text="slewing to ({0:.4f}, {1:.4f})"'
                        .format(self.ra, self.dec))
             cmdVar = call(actor='tcc', forUserCmd=cmd,
-                          cmdStr=('target {0:f}, {1:f} icrs'
-                                  .format(self.ra, self.dec)))
+                          cmdStr=('target {0:f}, {1:f} icrs {2}'
+                                  .format(self.ra, self.dec, screenCmd)))
 
         if cmdVar.didFail:
             # TODO: add LCO specific error messages here.
