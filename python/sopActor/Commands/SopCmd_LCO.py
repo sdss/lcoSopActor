@@ -31,9 +31,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
         self.keys.extend([])
 
         # Define new commands for APO
-        self.vocab = [
-            ('gotoField', '[<guiderFlatTime>] [<guiderTime>] [noGuider]'
-                          '[abort]', self.gotoField)]
+        self.vocab = [('gotoField', '[noScreen] [abort]', self.gotoField)]
 
     def gotoField(self, cmd):
         """Slew to the current cartridge/pointing.
@@ -59,19 +57,11 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         cmdState.reinitialize(cmd, output=False)
 
-        cmdState.doSlew = 'noSlew' not in keywords
-
-        if survey == sopActor.UNKNOWN:
-            cmd.warn(
-                'text="No cartridge is known to be loaded; disabling guider"')
-            cmdState.doGuider = False
-            cmdState.doGuiderFlat = False
-
-        if cmdState.doSlew:
-            pointingInfo = sopState.models['platedb'].keyVarDict['pointingInfo']
-            cmdState.ra = pointingInfo[3]
-            cmdState.dec = pointingInfo[4]
-            # Not setting the rotator because at LCO we don't move it.
+        # Gets the pointing information.
+        pointingInfo = sopState.models['platedb'].keyVarDict['pointingInfo']
+        cmdState.ra = pointingInfo[3]
+        cmdState.dec = pointingInfo[4]
+        # Not setting the rotator because at LCO we don't move it.
 
         if myGlobals.bypass.get(name='slewToField'):
             fakeSkyPos = SopCmd.obs2Sky(cmd, cmdState.fakeAz, cmdState.fakeAlt,
