@@ -988,11 +988,9 @@ def goto_field_apogee(cmd, cmdState, actorState, slewTimeout):
 def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     """Process a goto field sequence for an APOGEE plate at LCO."""
 
-    if cmdState.doSlew:
-        multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout,
-                              location='LCO')
-        if not _run_slew(cmd, cmdState, actorState, multiCmd):
-            return False
+    multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
+    if not _run_slew(cmd, cmdState, actorState, multiCmd):
+        return False
 
     return True
 
