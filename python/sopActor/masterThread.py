@@ -1188,9 +1188,9 @@ def goto_field(cmd, cmdState, actorState):
 
     # Slew to field
     slewTimeout = 180
-    finishMsg = "On field."
+    finishMsg = 'On field.'
 
-    show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand="gotoField")
+    show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand='gotoField')
     cartStatus, failMsg = check_cart(actorState)
 
     if cartStatus is False:
@@ -1200,21 +1200,21 @@ def goto_field(cmd, cmdState, actorState):
     if actorState.survey == sopActor.APOGEE:
         success = goto_field_apogee(cmd, cmdState, actorState, slewTimeout)
     elif actorState.survey == sopActor.APOGEE2S:
-        # Uses a longr slewTimeout for LCO
-        success = goto_field_apogee_lco(cmd, cmdState, actorState,
-                                        slewTimeout * 2)
+        # Uses a longer slewTimeout for LCO
+        success = goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout * 2)
     elif actorState.survey == sopActor.BOSS or actorState.survey == sopActor.MANGA:
         success = goto_field_boss(cmd, cmdState, actorState, slewTimeout)
     elif actorState.survey == sopActor.APOGEEMANGA:
         success = goto_field_apogeemanga(cmd, cmdState, actorState, slewTimeout)
     else:
         success = False
-        failMsg = "Do not know survey: %s. Did you loadCartridge?"%actorState.survey
+        failMsg = 'Do not know survey: {0}. Did you loadCartridge?'.format(actorState.survey)
         fail_command(cmd, cmdState, failMsg)
 
     # if not success: we've already failed the command.
     if success:
-        finish_command(cmd,cmdState,actorState,finishMsg)
+        finish_command(cmd, cmdState, actorState, finishMsg)
+
 
 def do_apogee_sky_flats(cmd, cmdState, actorState):
     """Offset the telescope slightly and take some short sky exposures."""
