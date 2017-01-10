@@ -39,7 +39,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
         """Slew to the current cartridge/pointing.
 
         Slew to the position of the currently loaded cartridge. Eventually
-        this command may also do callibrations.
+        this command may also do calibrations.
 
         """
 
