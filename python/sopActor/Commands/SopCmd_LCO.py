@@ -28,24 +28,12 @@ class SopCmd_LCO(SopCmd.SopCmd):
         super(SopCmd_LCO, self).__init__(actor)
 
         # Define APO specific keys.
-        self.keys.extend([
-            keys.Key('lco', types.String(), help='Test key for LCO.')])
+        self.keys.extend([])
 
         # Define new commands for APO
         self.vocab = [
-            ('doLCOThing', '[<lco>]', self.doLCOThing),
-            ('gotoField', '[<guiderFlatTime>] [<guiderTime>] [noGuider] '
+            ('gotoField', '[<guiderFlatTime>] [<guiderTime>] [noGuider]'
                           '[abort]', self.gotoField)]
-
-    def doLCOThing(self, cmd):
-        """Test for LCO."""
-
-        if 'lco' in cmd.cmd.keywords:
-            text = cmd.cmd.keywords['lco'].values[0]
-            cmd.warn('text={0}'.format(
-                qstr('got a text!: {0}'.format(text))))
-        else:
-            cmd.warn('text="no text was passed :("')
 
     def gotoField(self, cmd):
         """Slew to the current cartridge/pointing.
