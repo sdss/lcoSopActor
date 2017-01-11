@@ -349,6 +349,7 @@ class GotoFieldCmd(CmdState):
         self.keepOffsets = None
         self.doSlew = True
         self.doHartmann = True
+        self.moveScreen = True
         self.doCalibs = True
         self.didArc = False
         self.didFlat = False
@@ -359,6 +360,7 @@ class GotoFieldCmd(CmdState):
         self.stop_boss_exposure()
         self.stop_tcc()
         self.doSlew = False
+        self.moveScreen = False
         self.doHartmann = False
         self.doCalibs = False
         self.doGuiderFlat = False

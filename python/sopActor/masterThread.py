@@ -913,15 +913,16 @@ def do_boss_calibs(cmd, cmdState, actorState):
         return
 
     finish_command(cmd,cmdState,actorState,finishMsg)
-#...
+
 
 def start_slew(cmd, cmdState, actorState, slewTimeout, location='APO'):
-    """Prepare for the start of a slew. Returns the relevant multiCmd for precondition appending."""
+    """Prepare for the start of a slew.
+
+    Returns the relevant multiCmd for precondition appending."""
 
     cmdState.setStageState('slew', 'running')
 
-    multiCmd = SopMultiCommand(cmd, slewTimeout + actorState.timeout,
-                               cmdState.name + '.slew')
+    multiCmd = SopMultiCommand(cmd, slewTimeout + actorState.timeout, cmdState.name + '.slew')
 
     if location == 'APO':
         # At LCO, we don't do axis init.
@@ -930,7 +931,7 @@ def start_slew(cmd, cmdState, actorState, slewTimeout, location='APO'):
 
     multiCmd.append(sopActor.TCC, Msg.SLEW, actorState=actorState,
                     ra=cmdState.ra, dec=cmdState.dec, rot=cmdState.rotang,
-                    keepOffsets=cmdState.keepOffsets)
+                    keepOffsets=cmdState.keepOffsets, moveScreen=cmdState.moveScreen)
 
     return multiCmd
 
@@ -959,6 +960,7 @@ def goto_field_apogeemanga(cmd, cmdState, actorState, slewTimeout):
 
     # now use the BOSS/MaNGA goto field logic, with the APOGEE shutter safely closed.
     return goto_field_boss(cmd, cmdState, actorState, slewTimeout)
+
 
 def goto_field_apogee(cmd, cmdState, actorState, slewTimeout):
     """Process a goto field sequence for an APOGEE plate."""

@@ -182,6 +182,7 @@ class SlewHandler(object):
         self.ra = getattr(msg, 'ra', None)
         self.dec = getattr(msg, 'dec', None)
         self.keepOffsets = getattr(msg, 'keepOffsets', False)
+        self.moveScreen = getattr(msg, 'moveScreen', False)
 
     def slew(self, cmd, replyQueue):
         """Issue the commanded tcc track if the axes are ready to move."""
@@ -264,11 +265,11 @@ class SlewHandler(object):
             replyQueue.put(Msg.REPLY, cmd=cmd, success=True)
         return
 
-    def do_slew_lco(self, cmd, replyQueue, screen=True):
+    def do_slew_lco(self, cmd, replyQueue):
         """Commands the TCC at LCO to slew."""
 
         call = self.actorState.actor.cmdr.call
-        screenCmd = '/screen' if screen else ''
+        screenCmd = '/screen' if self.moveScreen else ''
 
         if self.ra is not None and self.dec is not None:
             cmd.inform('text="slewing to ({0:.4f}, {1:.4f})"'

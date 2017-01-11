@@ -57,6 +57,8 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         cmdState.reinitialize(cmd, output=False)
 
+        cmdState.moveScreen = 'noScreen' not in keywords
+
         # Gets the pointing information.
         pointingInfo = sopState.models['platedb'].keyVarDict['pointingInfo']
         cmdState.ra = pointingInfo[3]
