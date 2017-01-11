@@ -116,6 +116,7 @@ class TestGotoField(SopCmdTester, unittest.TestCase):
         self.assertEqual(msg.cmdState.ra, expect.get('ra', 0))
         self.assertEqual(msg.cmdState.dec, expect.get('dec', 0))
         self.assertEqual(msg.cmdState.doSlew, expect.get('doSlew', True))
+        self.assertEqual(msg.cmdState.moveScreen, expect.get('moveScreen', True))
 
     def test_gotoField_apogee_default(self):
 
@@ -133,6 +134,15 @@ class TestGotoField(SopCmdTester, unittest.TestCase):
         self.actorState.gotoField.cmd = self.cmd
         self._run_cmd('gotoField abort', None)
         self.assertTrue(self.actorState.aborting)
+
+    def test_gotoField_noScreen(self):
+
+        sopTester.updateModel('guider', TestHelper.guiderState['apogeeLoaded'])
+        sopTester.updateModel('platedb', TestHelper.platedbState['apogee'])
+        stages = ['slew', 'cleanup']
+        expect = {'ra': 20, 'dec': 30, 'moveScreen': False}
+
+        self._gotoField(1, expect, stages, 'noScreen')
 
 
 if __name__ == '__main__':

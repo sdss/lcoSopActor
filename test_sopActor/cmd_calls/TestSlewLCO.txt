@@ -1,5 +1,8 @@
 [test_do_slew]
-tcc target 10.000000, 20.000000
+tcc target 10.000000, 20.000000 icrs /screen
 
 [test_do_slew_fails]
-tcc target 10.000000, 20.000000
+tcc target 10.000000, 20.000000 icrs /screen
+
+[test_do_slew_noScreen]
+tcc target 10.000000, 20.000000 icrs

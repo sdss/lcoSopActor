@@ -296,26 +296,40 @@ class TestSlewLCO(TccThreadTester, unittest.TestCase):
         self.assertEqual(self.slewHandler.dec, dec)
         self.assertEqual(self.slewHandler.rot, rot)
         self.assertTrue(self.slewHandler.keepOffsets)
+        self.assertTrue(self.slewHandler.moveScreen)
 
-    def _do_slew_radec(self, ra, dec, success):
+    def test_parse_args_moveScreen(self):
+
+        msg = sopActor.Msg(sopActor.Msg.SLEW,
+                           self.cmd,
+                           moveScreen=False)
+
+        self.slewHandler.parse_args(msg)
+        self.assertFalse(self.slewHandler.moveScreen)
+
+    def _do_slew_radec(self, ra, dec, success, moveScreen=True):
 
         self.slewHandler.ra = ra
         self.slewHandler.dec = dec
         self.slewHandler.rot = None
+        self.slewHandler.moveScreen = moveScreen
         self.slewHandler.do_slew_lco(self.cmd, self.queues['tcc'])
 
         msg = self.queues['tcc'].get(timeout=0.1)
         self.assertEqual(msg.success, success)
 
-        error = 0 if success else 2
+        error = 0 if success else 1
         self._check_cmd(1, 1, 0, error, False)
 
     def test_do_slew(self):
         self._do_slew_radec(10, 20, True)
 
     def test_do_slew_fails(self):
-        self.cmd.failOn = 'tcc target 10.000000, 20.000000'
+        self.cmd.failOn = 'tcc target 10.000000, 20.000000 icrs /screen'
         self._do_slew_radec(10, 20, False)
+
+    def test_do_slew_noScreen(self):
+        self._do_slew_radec(10, 20, True, moveScreen=False)
 
 
 if __name__ == '__main__':
