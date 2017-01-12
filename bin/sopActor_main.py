@@ -15,6 +15,7 @@ from __future__ import print_function, division, absolute_import
 import sys
 from sopActor import Msg, SopActor
 
+
 # start a new SopActor
 if __name__ == "__main__":
 
