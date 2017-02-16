@@ -43,7 +43,6 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         sopState = myGlobals.actorState
         cmdState = sopState.gotoField
-        survey = sopState.survey
         keywords = cmd.cmd.keywords
 
         if self.doing_science(sopState):
