@@ -173,7 +173,7 @@ class SlewHandler(object):
         self.rot = None
         self.keepOffsets = False
         self.ignoreBadAz = False # for when we start below the alt limit.
-        self.moveScreen = True
+        self.ffScreen = False
 
     def parse_args(self, msg):
         """Extract the various potential arguments of a slew msg."""
@@ -183,7 +183,7 @@ class SlewHandler(object):
         self.ra = getattr(msg, 'ra', None)
         self.dec = getattr(msg, 'dec', None)
         self.keepOffsets = getattr(msg, 'keepOffsets', False)
-        self.moveScreen = getattr(msg, 'moveScreen', True)
+        self.ffScreen = getattr(msg, 'ffScreen', False)
 
     def slew(self, cmd, replyQueue):
         """Issue the commanded tcc track if the axes are ready to move."""
@@ -272,17 +272,15 @@ class SlewHandler(object):
         call = self.actorState.actor.cmdr.call
 
         if self.ra is not None and self.dec is not None:
-            cmd.inform('text="slewing to ({0:.4f}, {1:.4f})"'
-                       .format(self.ra, self.dec))
+            cmd.inform('text="slewing to ({0:.4f}, {1:.4f})"'.format(self.ra, self.dec))
             cmdStr = 'target {0:f}, {1:f} icrs'.format(self.ra, self.dec)
-            if self.moveScreen:
+            if self.ffScreen:
                 cmdStr += ' /screen'
             cmdVar = call(actor='tcc', forUserCmd=cmd, cmdStr=cmdStr)
 
         if cmdVar.didFail:
             # TODO: add LCO specific error messages here.
-            cmd.error('text=\"Failed to complete slew: '
-                      'see TCC messages for details.\"')
+            cmd.error('text=\"Failed to complete slew: see TCC messages for details.\"')
             replyQueue.put(Msg.REPLY, cmd=cmd, success=False)
             return
 

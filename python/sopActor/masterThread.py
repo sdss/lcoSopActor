@@ -474,7 +474,29 @@ def guider_flat(cmd, cmdState, actorState, stageName, apogeeShutter=False):
         return False
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
     return True
-#...
+
+
+def guider_flat_lco(cmd, cmdState, actorState, stageName):
+
+    if not myGlobals.actorState.models['tcc'].keyVarDict['ffPower']:
+        failMsg = 'FF lamps are not on.'
+        return fail_command(cmd, cmdState, failMsg)
+
+    guiderDelay = 20
+
+    multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay,
+                               '.'.join((cmdState.name + stageName, '.guiderFlat')))
+
+    multiCmd.append(sopActor.GUIDER, Msg.EXPOSE,
+                    expTime=cmdState.guiderFlatTime, expType='flat')
+
+    if not handle_multiCmd(multiCmd, cmd, cmdState, stageName, 'Failed to take a guider flat'):
+        return False
+
+    show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
+
+    return True
+
 
 def deactivate_guider_decenter(cmd, cmdState, actorState, stageName):
     """Prepare for non-MaNGA observations by disabling guider decenter mode."""
@@ -929,9 +951,11 @@ def start_slew(cmd, cmdState, actorState, slewTimeout, location='APO'):
         # start with an axis init
         multiCmd.append(SopPrecondition(sopActor.TCC, Msg.AXIS_INIT))
 
+    ffScreen = True if cmdState.ffScreen == 'on' else False
+
     multiCmd.append(sopActor.TCC, Msg.SLEW, actorState=actorState,
                     ra=cmdState.ra, dec=cmdState.dec, rot=cmdState.rotang,
-                    keepOffsets=cmdState.keepOffsets, moveScreen=cmdState.moveScreen)
+                    keepOffsets=cmdState.keepOffsets, ffScreen=ffScreen)
 
     return multiCmd
 
@@ -990,11 +1014,29 @@ def goto_field_apogee(cmd, cmdState, actorState, slewTimeout):
 def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     """Process a goto field sequence for an APOGEE plate at LCO."""
 
+    if not is_gang_at_cart(cmd, cmdState, actorState):
+        return False
+
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
     if not _run_slew(cmd, cmdState, actorState, multiCmd):
         return False
 
-    return True
+    # If we only want to slew, stops here.
+    if cmdState.onlySlew:
+        return True
+
+    if cmdState.doGuider and cmdState.doGuiderFlat:
+        guider_flat_lco(cmd, cmdState, actorState, 'slew')
+
+    # Finally, we go to the field and removes the screen
+    cmdState.ffScreen = 'off'
+    cmd.warn('text="initiating final slew. The LCO operator needs to approve."')
+    multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
+    if not _run_slew(cmd, cmdState, actorState, multiCmd):
+        return False
+
+    if cmdState.doGuider:
+        return guider_start(cmd, cmdState, actorState)
 
 
 def goto_field_boss(cmd, cmdState, actorState, slewTimeout):
