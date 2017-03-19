@@ -55,6 +55,8 @@ class SopCmd_LCO(SopCmd.SopCmd):
             self.stop_cmd(cmd, cmdState, sopState, 'gotoField')
             return
 
+        survey = sopState.survey
+
         # Modify running gotoField command
         if self.modifiable(cmd, cmdState):
 
