@@ -1026,7 +1026,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
 
     # Finally, we go to the field and removes the screen
     cmdState.ffScreen = 'off'
-    cmd.warn('text="initiating final slew. The LCO operator needs to approve."')
+    cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
     if not _run_slew(cmd, cmdState, actorState, multiCmd):
         return False
