@@ -77,7 +77,9 @@ class SopCmd_LCO(SopCmd.SopCmd):
         cmdState.reinitialize(cmd, output=False)
 
         cmdState.doSlew = True
-        cmdState.doGuider = True if not 'onlySlew' not in keywords else False
+        cmdState.onlySlew = True if 'onlySlew' in keywords else False
+
+        cmdState.doGuider = True if not cmdState.onlySlew else False
 
         # Moves the screen in front of the telescope.
         cmdState.ffScreen = 'on'

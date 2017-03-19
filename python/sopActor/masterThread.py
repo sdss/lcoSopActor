@@ -443,7 +443,7 @@ def get_next_apogee_dither_pair(actorState):
 # The actual SOP commands, and sub-commands.
 #
 
-def guider_start(cmd, cmdState, actorState, finish=True):
+def guider_start(cmd, cmdState, actorState, finish=True, location='APO'):
     """Prepare telescope to start guiding and turn the guider on."""
     cmdState.setStageState("guider", "running")
     multiCmd = SopMultiCommand(cmd, actorState.timeout + cmdState.guiderTime,
@@ -451,8 +451,10 @@ def guider_start(cmd, cmdState, actorState, finish=True):
 
     multiCmd.append(sopActor.GUIDER, Msg.START, on=True,
                     expTime=cmdState.guiderTime, clearCorrections=True)
-    prep_for_science(multiCmd, precondition=True)
-    prep_guider_decenter_off(multiCmd)
+
+    if location == 'APO':
+        prep_for_science(multiCmd, precondition=True)
+        prep_guider_decenter_off(multiCmd)
 
     failMsg = "failed to start the guider"
     if not handle_multiCmd(multiCmd, cmd, cmdState, 'guider', failMsg, finish=finish):
@@ -1032,7 +1034,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
         return False
 
     if cmdState.doGuider:
-        return guider_start(cmd, cmdState, actorState)
+        return guider_start(cmd, cmdState, actorState, location='LCO')
 
 
 def goto_field_boss(cmd, cmdState, actorState, slewTimeout):
