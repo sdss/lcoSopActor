@@ -478,10 +478,6 @@ def guider_flat(cmd, cmdState, actorState, stageName, apogeeShutter=False):
 
 def guider_flat_lco(cmd, cmdState, actorState, stageName):
 
-    if not myGlobals.actorState.models['tcc'].keyVarDict['ffPower']:
-        failMsg = 'FF lamps are not on.'
-        return fail_command(cmd, cmdState, failMsg)
-
     guiderDelay = 20
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay,
