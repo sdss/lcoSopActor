@@ -34,8 +34,14 @@ class ApogeeGang(object):
                    36: self.GANG_AT_1M
                    }
 
-        mcpModel = myGlobals.actorState.models['mcp']
-        gangPos = mcpModel.keyVarDict['apogeeGang']
+        if self.location == 'APO':
+            model = myGlobals.actorState.models['mcp']
+        elif self.location == 'LCO':
+            model = myGlobals.actorState.models['tcc']
+        else:
+            return self.GANG_UNKNOWN
+
+        gangPos = model.keyVarDict['apogeeGang']
         if not gangPos.isCurrent:
             return self.GANG_UNKNOWN
 
