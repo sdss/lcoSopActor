@@ -212,8 +212,8 @@ def main(actor, queues):
                 comment = getattr(msg,'comment','')
                 nreads = getattr(msg, 'nreads', None)
                 expTime = getattr(msg, "expTime")
-                print("APOGEE Expose nreads=%i expType=%i expTime=%s"%(nreads, expType, str(expTime)))
-                success = do_expose(msg.cmd, actorState, msg.expTime, dither, expType, comment, nreads)
+                msg.cmd.warn("APOGEE Expose nreads=%i expType=%i expTime=%s"%(nreads, expType, str(expTime)))
+                success = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
 
                 msg.replyQueue.put(Msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success)
 
