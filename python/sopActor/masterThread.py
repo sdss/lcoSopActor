@@ -1089,7 +1089,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     # except Queue.Empty:
     #     darkMsg2 = False
     darkMsg2 = True
-    cmd.warn("guiderStarted: %s dark1,2 success: [%s, %s] "%(guiderStarted, darkMsg1.success, darkMsg2.success))
+    cmd.warn("guiderStarted: %s dark1,2 success: [%s, %s] "%(guiderStarted, darkMsg1, darkMsg2))
     return not False in [guiderStarted, darkMsg1, darkMsg2]
 
 
