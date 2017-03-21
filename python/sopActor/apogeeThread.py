@@ -46,19 +46,33 @@ def do_shutter(cmd,actorState,position):
     return cmdVar
 #...
 
-def do_expose(cmd, actorState, expTime, dither, expType, comment):
+def do_expose(cmd, actorState, expTime, dither, expType, comment, nreads=None):
     """Take an exposure, moving the dither position if requested (not None)."""
+
+    # may not specify nreads and expTime, fail if this is the case
+    if expTime is not None and nreads is not None:
+        cmd.error("text=%s"%astr("May not specify expTime AND nreads!"))
+        return False
+
     if dither != None:
         cmdVar = do_dither(cmd, actorState, dither)
         if cmdVar.didFail:
             cmd.error('text=%s'%qstr("Failed to move APOGEE dither to %s position."%(dither)))
             return False
 
-    timeLim = expTime + 15.0  # seconds
+    if nreads is not None:
+        expFlavor = "nreads=%i"%nreads
+        # read is 10.8 seconds, round up and add overhead
+        timeLim = 11 * nreads + 15.0
+    else:
+        expFlavor = "time=%0.1f"%expTime
+        timeLim = expTime + 15.0 # seconds
+
+    comment = "comment=%s" % qstr(comment) if comment else ""
+    exposeCmdStr = "expose %s object=%s %s"%(expFlavor, expType, comment)
+
     cmdVar = actorState.actor.cmdr.call(actor="apogee", forUserCmd=cmd,
-                                        cmdStr="expose time=%0.1f object=%s %s" %
-                                        (expTime, expType,
-                                         ("comment=%s" % qstr(comment)) if comment else ""),
+                                        cmdStr=exposeCmdStr,
                                         keyVars=[], timeLim=timeLim)
     success = not cmdVar.didFail
 
@@ -177,7 +191,7 @@ def main(actor, queues):
     while True:
         try:
             msg = actorState.queues[sopActor.APOGEE].get(timeout=timeout)
-            
+
             if msg.type == Msg.EXIT:
                 if msg.cmd:
                     msg.cmd.inform("text=\"Exiting thread %s\"" % (threading.current_thread().name))
@@ -186,7 +200,7 @@ def main(actor, queues):
             elif msg.type == Msg.DITHER:
                 cmdVar = do_dither(msg.cmd, actorState, msg.dither)
                 checkFailure(msg.cmd,msg.replyQueue,cmdVar,"Failed to move APOGEE dither to %s position."%(msg.dither))
-                
+
             elif msg.type == Msg.APOGEE_SHUTTER:
                 position = "open" if msg.open else "close"
                 cmdVar = do_shutter(msg.cmd, actorState, position)
@@ -196,7 +210,9 @@ def main(actor, queues):
                 dither = getattr(msg,'dither',None)
                 expType = getattr(msg,'expType','dark')
                 comment = getattr(msg,'comment','')
-                success = do_expose(msg.cmd, actorState, msg.expTime, dither, expType, comment)
+                nreads = getattr(msg, 'nreads', None)
+                print("APOGEE Expose nreads=%i expType=%i expTime=%s"%(nreads, expType, str(expTime)))
+                success = do_expose(msg.cmd, actorState, msg.expTime, dither, expType, comment, nreads)
 
                 msg.replyQueue.put(Msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success)
 

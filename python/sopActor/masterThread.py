@@ -91,7 +91,7 @@ class SopPrecondition(Precondition):
         open, closed = 0, 0
         for s in ffsStatus:
             if s == None:
-                raise RuntimeError, "Unable to read FFS status"
+                raise RuntimeError("Unable to read FFS status")
 
             open += int(s[0])
             closed += int(s[1])
@@ -131,11 +131,11 @@ class SopPrecondition(Precondition):
         elif queueName == sopActor.WHT_LAMP:
             return myGlobals.actorState.models["mcp"].keyVarDict["whtLampCommandedOn"][0], 0
         else:
-            print "Unknown lamp queue %s" % queueName
+            print("Unknown lamp queue %s" % queueName)
             return False, 0
 
         if status == None:
-            raise RuntimeError, ("Unable to read %s lamp status" % queueName)
+            raise RuntimeError("Unable to read %s lamp status" % queueName)
 
         on = 0
         for i in status:
@@ -476,17 +476,23 @@ def guider_flat(cmd, cmdState, actorState, stageName, apogeeShutter=False):
     return True
 
 
-def guider_flat_lco(cmd, cmdState, actorState, stageName):
+def expose_flats_lco(cmd, cmdState, actorState, stageName):
+    """" Take guider flat and apogee flat """
 
     guiderDelay = 20
+    nreadsFlat = 15
+    flatTimeout = nreadsFlat * 11 # 10.8 seconds per read...
 
-    multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay,
+    multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay + flatTimeout,
                                '.'.join((cmdState.name + stageName, '.guiderFlat')))
 
     multiCmd.append(sopActor.GUIDER, Msg.EXPOSE,
                     expTime=cmdState.guiderFlatTime, expType='flat')
 
-    if not handle_multiCmd(multiCmd, cmd, cmdState, stageName, 'Failed to take a guider flat'):
+    multiCmd.append(sopActor.APOGEE, Msg.EXPOSE,
+                    expTime=None, nreads=nreadsFlat, expType='DomeFlat')
+
+    if not handle_multiCmd(multiCmd, cmd, cmdState, stageName, 'Failed to take a guider and/or apogee flat'):
         return False
 
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
@@ -1007,7 +1013,7 @@ def goto_field_apogee(cmd, cmdState, actorState, slewTimeout):
     return True
 
 
-def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
+def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout, queues):
     """Process a goto field sequence for an APOGEE plate at LCO."""
 
     if not is_gang_at_cart(cmd, cmdState, actorState):
@@ -1022,15 +1028,35 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
         return True
 
     if cmdState.doGuider and cmdState.doGuiderFlat:
-        guider_flat_lco(cmd, cmdState, actorState, 'slew')
+        expose_flats_lco(cmd, cmdState, actorState, 'slew')
 
     # Finally, we go to the field and removes the screen
     cmdState.ffScreen = 'off'
+    # explicitly turn off lamps (tcc target will do this) but we want
+    # to begin darks before slewing.  Putting darks in the
+    # slew multi command will block guiding until the darks are done,
+    # and we want to be acquiring the field potentially before the darks
+    # finish!
+    # NOTE: I don't like using raw call()s here, but it's probably not worth
+    # creating a tccThread Msg just for this arc offset.
+    cmdVar = actorState.actor.cmdr.call(actor="tcc", forUserCmd=cmd,
+                                        cmdStr="lamp off",
+                                        timeLim=actorState.timeout)
+    if cmdVar.didFail:
+        failMsg = 'Failed to turn ff lamp off.'
+        fail_command(cmd, cmdState, failMsg)
+        return
+
+    # put two darks on the APOGEE queue (non blocking)
+    nreadsDark = 10
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark")
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark")
+
     cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
     if not _run_slew(cmd, cmdState, actorState, multiCmd):
         return False
-
+    # when slew is done, fire up guider.
     if cmdState.doGuider:
         return guider_start(cmd, cmdState, actorState)
 
@@ -1225,6 +1251,7 @@ def goto_field(cmd, cmdState, actorState):
     """Start a goto field sequence, with behavior depending on the current survey."""
 
     # Slew to field
+    # LCO HACK ! not a hack but do we want to increase slewTimeout?  du Pont is very slow.
     slewTimeout = 180
     finishMsg = 'On field.'
 
@@ -1516,8 +1543,8 @@ def main(actor, queues):
                 msg.cmd.inform('text="%s thread"' % threadName)
                 msg.replyQueue.put(Msg.REPLY, cmd=msg.cmd, success=True)
             else:
-                raise ValueError, ("Unknown message type %s" % (msg.type))
+                raise ValueError("Unknown message type %s" % (msg.type))
         except Queue.Empty:
             actor.bcast.diag('text="%s alive"' % threadName)
-        except Exception, e:
+        except Exception as e:
             sopActor.handle_bad_exception(actor,e,threadName,msg)
