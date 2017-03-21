@@ -483,7 +483,7 @@ def expose_flats_lco(cmd, cmdState, actorState, stageName):
     """" Take guider flat and apogee flat """
 
     guiderDelay = 20
-    nreadsFlat = 5 #15
+    nreadsFlat = 2 #15
     flatTimeout = nreadsFlat * 11 # 10.8 seconds per read...
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay + flatTimeout,
@@ -1056,7 +1056,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
 
     # put two darks on the APOGEE queue (non blocking)
     darkReplyQueue = SopQueue("TheDarkSide", 0)
-    nreadsDark = 5 #10
+    nreadsDark = 2 #10
     darkTimeOut = nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
     time.sleep(1)
     myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
