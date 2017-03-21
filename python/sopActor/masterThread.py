@@ -1058,6 +1058,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     darkReplyQueue = SopQueue("TheDarkSide", 0)
     nreadsDark = 5 #10
     darkTimeOut = nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
+    time.sleep(1)
     myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
                                                      nreads=nreadsDark, expType="Dark",
                                                      replyQueue = darkReplyQueue)
