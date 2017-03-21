@@ -1028,6 +1028,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout, queues):
         return True
 
     if cmdState.doGuider and cmdState.doGuiderFlat:
+        print("exposing flats")
         expose_flats_lco(cmd, cmdState, actorState, 'slew')
 
     # Finally, we go to the field and removes the screen
@@ -1039,14 +1040,17 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout, queues):
     # finish!
     # NOTE: I don't like using raw call()s here, but it's probably not worth
     # creating a tccThread Msg just for this arc offset.
+    print("command tcc lamp off")
     cmdVar = actorState.actor.cmdr.call(actor="tcc", forUserCmd=cmd,
                                         cmdStr="lamp off",
                                         timeLim=actorState.timeout)
     if cmdVar.didFail:
+        print("lamp off command FAILED!!!")
         failMsg = 'Failed to turn ff lamp off.'
         fail_command(cmd, cmdState, failMsg)
         return
 
+    print("putting 2 darks on apogee queue")
     # put two darks on the APOGEE queue (non blocking)
     nreadsDark = 10
     myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark")
@@ -1058,6 +1062,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout, queues):
         return False
     # when slew is done, fire up guider.
     if cmdState.doGuider:
+        print("starting guider")
         return guider_start(cmd, cmdState, actorState)
 
 
