@@ -7,6 +7,9 @@ import sopActor.myGlobals as myGlobals
 from opscore.utility.qstr import qstr
 
 from twisted.internet import reactor, defer
+
+EXP_COUNTER = 0
+
 def twistedSleep(secs):
     d = defer.deferred()
     reactor.callLater(secs, d.callback, None)
@@ -212,7 +215,8 @@ def main(actor, queues):
                 comment = getattr(msg,'comment','')
                 nreads = getattr(msg, 'nreads', None)
                 expTime = getattr(msg, "expTime", None)
-                msg.cmd.warn("APOGEE Expose nreads=%i expType=%s expTime=%s"%(nreads, expType, str(expTime)))
+                EXP_COUNTER += 1
+                msg.cmd.warn("APOGEE Expose nreads=%i expType=%s expTime=%s expCounter=%i"%(nreads, expType, str(expTime), EXP_COUNTER))
                 success = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
 
                 msg.replyQueue.put(Msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success)
