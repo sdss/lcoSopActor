@@ -1056,8 +1056,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
 
     # put two darks on the APOGEE queue (non blocking)
     darkReplyQueue = SopQueue("TheDarkSide", 0)
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.TWODARKS, cmd, expTime=None,
-                                                     nreads=nreadsDark, expType="Dark",
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.TWODARKS, cmd,
                                                      replyQueue = darkReplyQueue)
 
     # nreadsDark = 2 #10
