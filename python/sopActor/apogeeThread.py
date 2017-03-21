@@ -147,7 +147,7 @@ class ApogeeCB(object):
                 self.reset()
                 # time.sleep(1)
                 self.cb()
-        except Exception, e:
+        except Exception as e:
             self.cmd.warn('text="failed to call callback: %s"' % (e))
             tback("cb", e)
 
@@ -184,7 +184,7 @@ class ApogeeCB(object):
 
 def main(actor, queues):
     """Main loop for APOGEE ICC thread"""
-
+    global EXP_COUNTER
     threadName = "apogee"
     actorState = myGlobals.actorState
     timeout = actorState.timeout
