@@ -212,14 +212,15 @@ def main(actor, queues):
 
             elif msg.type == Msg.TWODARKS:
                 dither = None
-                expType = Dark
+                expType = "Dark"
                 comment = getattr(msg,'comment','')
                 nreads = 2
                 expTime = None
                 success1 = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
                 time.sleep(1)
                 success2 = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
-                msg.replyQueue.put(msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success1 and success2)
+                success = success1 and success2
+                msg.replyQueue.put(msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success)
 
             elif msg.type == Msg.EXPOSE:
                 dither = getattr(msg,'dither',None)
