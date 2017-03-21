@@ -4,6 +4,8 @@ import time
 import copy
 
 from sopActor import Msg
+from sopActor import Queue as SopQueue # used to get to the reply queue?
+_APG_RPLY_QUEUE_ = SopQueue("(replyQueue)", 0)
 import sopActor
 import sopActor.myGlobals as myGlobals
 # from opscore.utility.qstr import qstr
@@ -1049,16 +1051,14 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
                                         cmdStr="lamp off",
                                         timeLim=actorState.timeout)
     if cmdVar.didFail:
-        print("lamp off command FAILED!!!")
         failMsg = 'Failed to turn ff lamp off.'
         fail_command(cmd, cmdState, failMsg)
         return
 
-    print("putting 2 darks on apogee queue")
     # put two darks on the APOGEE queue (non blocking)
     nreadsDark = 10
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark")
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark")
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = _APG_RPLY_QUEUE_)
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = _APG_RPLY_QUEUE_)
 
     cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
@@ -1066,7 +1066,6 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
         return False
     # when slew is done, fire up guider.
     if cmdState.doGuider:
-        print("starting guider")
         return guider_start(cmd, cmdState, actorState)
 
 
