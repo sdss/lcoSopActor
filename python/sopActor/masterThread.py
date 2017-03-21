@@ -1016,7 +1016,7 @@ def goto_field_apogee(cmd, cmdState, actorState, slewTimeout):
     return True
 
 
-def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout, queues):
+def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     """Process a goto field sequence for an APOGEE plate at LCO."""
 
     if not is_gang_at_cart(cmd, cmdState, actorState):
