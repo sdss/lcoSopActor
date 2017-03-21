@@ -211,6 +211,7 @@ def main(actor, queues):
                 expType = getattr(msg,'expType','dark')
                 comment = getattr(msg,'comment','')
                 nreads = getattr(msg, 'nreads', None)
+                expTime = getattr(msg, "expTime")
                 print("APOGEE Expose nreads=%i expType=%i expTime=%s"%(nreads, expType, str(expTime)))
                 success = do_expose(msg.cmd, actorState, msg.expTime, dither, expType, comment, nreads)
 

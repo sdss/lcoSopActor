@@ -495,6 +495,7 @@ def expose_flats_lco(cmd, cmdState, actorState, stageName):
                     expTime=None, nreads=nreadsFlat, expType='DomeFlat')
 
     if not handle_multiCmd(multiCmd, cmd, cmdState, stageName, 'Failed to take a guider and/or apogee flat'):
+        fail_command(cmd, cmdState, 'Failed to take a guider and/or apogee flat')
         return False
 
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
@@ -1031,7 +1032,8 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout, queues):
 
     if cmdState.doGuider and cmdState.doGuiderFlat:
         print("exposing flats")
-        expose_flats_lco(cmd, cmdState, actorState, 'slew')
+        if not expose_flats_lco(cmd, cmdState, actorState, 'slew'):
+            return False
 
     # Finally, we go to the field and removes the screen
     cmdState.ffScreen = 'off'
