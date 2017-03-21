@@ -1077,7 +1077,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     if cmdState.doGuider:
         pass # always do guider for now
     cmd.warn("before starting guider")
-    guiderStarted = guider_start(cmd, cmdState, actorState)
+    guiderStarted = guider_start(cmd, cmdState, actorState, location="LCO")
     cmd.warn("done starting guider")
     # read from Dark Side queue to get response from darks
     try:
