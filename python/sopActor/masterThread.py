@@ -5,7 +5,6 @@ import copy
 
 from sopActor import Msg
 from sopActor import Queue as SopQueue # used to get to the reply queue?
-_APG_RPLY_QUEUE_ = SopQueue("(replyQueue)", 0)
 import sopActor
 import sopActor.myGlobals as myGlobals
 # from opscore.utility.qstr import qstr
@@ -1056,9 +1055,11 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
         return
 
     # put two darks on the APOGEE queue (non blocking)
+    darkReplyQueue = SopQueue("TheDarkSide", 0)
     nreadsDark = 10
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = _APG_RPLY_QUEUE_)
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = _APG_RPLY_QUEUE_)
+    darkTimeOut = nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = darkReplyQueue)
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = darkReplyQueue)
 
     cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
@@ -1066,7 +1067,21 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
         return False
     # when slew is done, fire up guider.
     if cmdState.doGuider:
-        return guider_start(cmd, cmdState, actorState)
+        pass # always do guider for now
+
+    guiderStarted = guider_start(cmd, cmdState, actorState)
+    # read from Dark Side queue to get response from darks
+    try:
+        darkMsg1 = darkReplyQueue.get(timeout=darkTimeOut).success
+    except Queue.Empty:
+        darkMsg1 = False
+    try:
+        darkMsg2 = darkReplyQueue.get(timeout=darkTimeOut).success
+    except Queue.Empty:
+        darkMsg2 = False
+    cmd.warn("guiderStarted: %s dark1,2 success: [%s, %s] "%(guiderStarted, darkMsg1.success, darkMsg2.success))
+    return not False in [guiderStarted, darkMsg1, darkMsg2]
+
 
 
 def goto_field_boss(cmd, cmdState, actorState, slewTimeout):
