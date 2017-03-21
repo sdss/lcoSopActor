@@ -51,7 +51,7 @@ def do_expose(cmd, actorState, expTime, dither, expType, comment, nreads=None):
 
     # may not specify nreads and expTime, fail if this is the case
     if expTime is not None and nreads is not None:
-        cmd.error("text=%s"%astr("May not specify expTime AND nreads!"))
+        cmd.error("text=%s"%qstr("May not specify expTime AND nreads!"))
         return False
 
     if dither != None:
