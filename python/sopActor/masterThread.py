@@ -483,7 +483,7 @@ def expose_flats_lco(cmd, cmdState, actorState, stageName):
     """" Take guider flat and apogee flat """
 
     guiderDelay = 20
-    nreadsFlat = 15
+    nreadsFlat = 5 #15
     flatTimeout = nreadsFlat * 11 # 10.8 seconds per read...
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay + flatTimeout,
@@ -1056,11 +1056,17 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
 
     # put two darks on the APOGEE queue (non blocking)
     darkReplyQueue = SopQueue("TheDarkSide", 0)
-    nreadsDark = 10
+    nreadsDark = 5 #10
     darkTimeOut = nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = darkReplyQueue)
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None, nreads=nreadsDark, expType="Dark", replyQueue = darkReplyQueue)
-
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
+                                                     nreads=nreadsDark, expType="Dark",
+                                                     replyQueue = darkReplyQueue)
+    cmd.warn("Added First Dark to Queue")
+    time.sleep(0.1)
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
+                                                     nreads=nreadsDark, expType="Dark",
+                                                     replyQueue = darkReplyQueue)
+    cmd.warn("Added Second Dark to Queue")
     cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
     if not _run_slew(cmd, cmdState, actorState, multiCmd):
