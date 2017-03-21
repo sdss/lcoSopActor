@@ -209,6 +209,17 @@ def main(actor, queues):
                 cmdVar = do_shutter(msg.cmd, actorState, position)
                 checkFailure(msg.cmd,msg.replyQueue,cmdVar,"Failed to %s APOGEE internal shutter."%(position))
 
+            elif msg.type == Msg.TWODARKS:
+                dither = None
+                expType = Dark
+                comment = getattr(msg,'comment','')
+                nreads = 2
+                expTime = None
+                success1 = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
+                time.sleep(1)
+                success2 = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
+                msg.replyQueue.put(msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success1 and success2)
+
             elif msg.type == Msg.EXPOSE:
                 dither = getattr(msg,'dither',None)
                 expType = getattr(msg,'expType','dark')

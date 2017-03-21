@@ -1056,18 +1056,23 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
 
     # put two darks on the APOGEE queue (non blocking)
     darkReplyQueue = SopQueue("TheDarkSide", 0)
-    nreadsDark = 2 #10
-    darkTimeOut = nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
-    time.sleep(1)
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
+    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.TWODARKS, cmd, expTime=None,
                                                      nreads=nreadsDark, expType="Dark",
                                                      replyQueue = darkReplyQueue)
-    cmd.warn("Added First Dark to Queue")
-    time.sleep(1)
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
-                                                         nreads=nreadsDark, expType="Dark",
-                                                     replyQueue = darkReplyQueue)
-    cmd.warn("Added Second Dark to Queue")
+
+    # nreadsDark = 2 #10
+    # darkTimeOut = nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
+    # time.sleep(1)
+    # myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
+    #                                                  nreads=nreadsDark, expType="Dark",
+    #                                                  replyQueue = darkReplyQueue)
+    # cmd.warn("Added First Dark to Queue")
+    # time.sleep(1)
+    # myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
+    #                                                      nreads=nreadsDark, expType="Dark",
+    #                                                  replyQueue = darkReplyQueue)
+    # cmd.warn("Added Second Dark to Queue")
+
     cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
     if not _run_slew(cmd, cmdState, actorState, multiCmd):
@@ -1084,10 +1089,12 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
         darkMsg1 = darkReplyQueue.get(timeout=darkTimeOut).success
     except Queue.Empty:
         darkMsg1 = False
-    try:
-        darkMsg2 = darkReplyQueue.get(timeout=darkTimeOut).success
-    except Queue.Empty:
-        darkMsg2 = False
+    # try:
+    #     darkMsg2 = darkReplyQueue.get(timeout=darkTimeOut).success
+    # except Queue.Empty:
+    #     darkMsg2 = False
+
+    darkMsg2 = True
     cmd.warn("guiderStarted: %s dark1,2 success: [%s, %s] "%(guiderStarted, darkMsg1, darkMsg2))
     return not False in [guiderStarted, darkMsg1, darkMsg2]
 

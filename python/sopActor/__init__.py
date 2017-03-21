@@ -104,6 +104,7 @@ except NameError:
         class NEW_SCRIPT(): pass
         class STOP_SCRIPT(): pass
         class SCRIPT_STEP(): pass
+        class TWODARKS(): pass
 
         def __init__(self, type, cmd, **data):
             self.type = type
