@@ -51,7 +51,7 @@ def do_expose(cmd, actorState, expTime, dither, expType, comment, nreads=None):
 
     # may not specify nreads and expTime, fail if this is the case
     if expTime is not None and nreads is not None:
-        cmd.error("text=%s"%astr("May not specify expTime AND nreads!"))
+        cmd.error("text=%s"%qstr("May not specify expTime AND nreads!"))
         return False
 
     if dither != None:
@@ -211,8 +211,8 @@ def main(actor, queues):
                 expType = getattr(msg,'expType','dark')
                 comment = getattr(msg,'comment','')
                 nreads = getattr(msg, 'nreads', None)
-                expTime = getattr(msg, "expTime")
-                msg.cmd.warn("APOGEE Expose nreads=%i expType=%i expTime=%s"%(nreads, expType, str(expTime)))
+                expTime = getattr(msg, "expTime", None)
+                msg.cmd.warn("APOGEE Expose nreads=%i expType=%s expTime=%s"%(nreads, expType, str(expTime)))
                 success = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
 
                 msg.replyQueue.put(Msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success)
