@@ -1045,7 +1045,7 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     # finish!
     # NOTE: I don't like using raw call()s here, but it's probably not worth
     # creating a tccThread Msg just for this arc offset.
-    print("command tcc lamp off")
+    # print("command tcc lamp off")
     cmdVar = actorState.actor.cmdr.call(actor="tcc", forUserCmd=cmd,
                                         cmdStr="lamp off",
                                         timeLim=actorState.timeout)
@@ -1071,12 +1071,14 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
     if not _run_slew(cmd, cmdState, actorState, multiCmd):
+        cmd.warn("second run slew failed")
         return False
     # when slew is done, fire up guider.
     if cmdState.doGuider:
         pass # always do guider for now
-
+    cmd.warn("before starting guider")
     guiderStarted = guider_start(cmd, cmdState, actorState)
+    cmd.warn("done starting guider")
     # read from Dark Side queue to get response from darks
     try:
         darkMsg1 = darkReplyQueue.get(timeout=darkTimeOut).success

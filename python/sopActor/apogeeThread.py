@@ -218,7 +218,6 @@ def main(actor, queues):
                 EXP_COUNTER += 1
                 msg.cmd.warn("APOGEE Expose nreads=%i expType=%s expTime=%s expCounter=%i"%(nreads, expType, str(expTime), EXP_COUNTER))
                 success = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
-
                 msg.replyQueue.put(Msg.EXPOSURE_FINISHED, cmd=msg.cmd, success=success)
 
             elif msg.type == Msg.APOGEE_DITHER_SET:
