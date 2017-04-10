@@ -483,7 +483,7 @@ def expose_flats_lco(cmd, cmdState, actorState, stageName):
     """" Take guider flat and apogee flat """
 
     guiderDelay = 20
-    nreadsFlat = 2 #15
+    nreadsFlat = 15
     flatTimeout = nreadsFlat * 11 # 10.8 seconds per read...
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay + flatTimeout,
@@ -1021,21 +1021,28 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     """Process a goto field sequence for an APOGEE plate at LCO."""
 
     if not is_gang_at_cart(cmd, cmdState, actorState):
+        cmd.warn("gang not at cart")
         return False
 
+    cmd.warn("debug 1")
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
     if not _run_slew(cmd, cmdState, actorState, multiCmd):
+        cmd.warn("_run_slew fail")
         return False
-
+    cmd.warn("debug 2")
     # If we only want to slew, stops here.
     if cmdState.onlySlew:
+        cmd.warn("only slew????")
         return True
 
+    cmd.warn("debug 3")
     if cmdState.doGuider and cmdState.doGuiderFlat:
         print("exposing flats")
         if not expose_flats_lco(cmd, cmdState, actorState, 'slew'):
+            print("expose flats fail?")
             return False
 
+    cmd.warn("debug 4")
     # Finally, we go to the field and removes the screen
     cmdState.ffScreen = 'off'
     # explicitly turn off lamps (tcc target will do this) but we want
@@ -1059,13 +1066,13 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.TWODARKS, cmd,
                                                      replyQueue = darkReplyQueue)
 
-    nreadsDark = 2 #10
+    nreadsDark = 10
     darkTimeOut = 2 * nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
     # time.sleep(1)
     # myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
     #                                                  nreads=nreadsDark, expType="Dark",
     #                                                  replyQueue = darkReplyQueue)
-    # cmd.warn("Added First Dark to Queue")
+    cmd.warn("Added First Dark to Queue")
     # time.sleep(1)
     # myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
     #                                                      nreads=nreadsDark, expType="Dark",

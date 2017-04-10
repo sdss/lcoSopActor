@@ -214,7 +214,7 @@ def main(actor, queues):
                 dither = None
                 expType = "Dark"
                 comment = getattr(msg,'comment','')
-                nreads = 2
+                nreads = 10
                 expTime = None
                 success1 = do_expose(msg.cmd, actorState, expTime, dither, expType, comment, nreads)
                 time.sleep(1)
