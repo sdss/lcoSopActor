@@ -31,7 +31,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
         self.keys.extend([])
 
         # Define new commands for APO
-        self.vocab = [('gotoField', '[onlySlew] [<guiderFlatTime>] '
+        self.vocab = [('gotoField', '[onlySlew] [noscreen] [<guiderFlatTime>] '
                       '[<guiderTime>] [abort]', self.gotoField)]
 
     def gotoField(self, cmd):
@@ -83,6 +83,9 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         # Moves the screen in front of the telescope.
         cmdState.ffScreen = 'on'
+        if 'noscreen' in keywords:
+            cmdState.ffScreen = 'off'
+
 
         if cmdState.doGuider:
             cmdState.guiderFlatTime = float(keywords['guiderFlatTime'].values[0]) \
@@ -104,8 +107,8 @@ class SopCmd_LCO(SopCmd.SopCmd):
             cmdState.dec = pointingInfo[4]
             cmdState.rotang = 0.0  # Rotator angle; should always be 0.0
 
-        if cmdState.onlySlew:
-            cmdState.ffScreen = 'off'
+        #if cmdState.onlySlew:
+        #    cmdState.ffScreen = 'off'
 
         if myGlobals.bypass.get(name='slewToField'):
             fakeSkyPos = SopCmd.obs2Sky(cmd, cmdState.fakeAz, cmdState.fakeAlt,
