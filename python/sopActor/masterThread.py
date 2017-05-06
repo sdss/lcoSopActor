@@ -32,7 +32,7 @@ class SopPrecondition(Precondition):
         and enough time has passed, it is ok, but if not, require (the full time).
         """
 
-        if self.queueName in myGlobals.warmupTime.keys():
+        if hasattr(myGlobals, 'warmupTime') and self.queueName in myGlobals.warmupTime.keys():
             assert self.msgId == Msg.LAMP_ON
 
             isOn, timeSinceTransition = self.lampIsOn(self.queueName)
@@ -484,16 +484,19 @@ def do_lco_lamp(cmd, actorState, mode, timeout=15):
 
     models = myGlobals.actorState.models
     current_mode = models['tcc'].keyVarDict['ffPower'][0]
-
+    print('current_mode=', current_mode)
+    modeStr = 'on' if mode == 'T' else 'off'
     if current_mode == mode:
         cmd.debug('text="FF lamps already in commanded state."')
         return True
 
     cmdVar = actorState.actor.cmdr.call(actor='tcc', forUserCmd=cmd,
-                                        cmdStr='lamp {0}'.format('on' if mode == 'T' else 'off'),
+                                        cmdStr='lamp {0}'.format(modeStr),
                                         timeLim=timeout)
     if cmdVar.didFail:
         return False
+
+    cmd.warn('text="FF lamp is now {0}"'.format(modeStr.upper()))
 
     return True
 
@@ -538,8 +541,10 @@ def expose_flats_lco(cmd, cmdState, actorState):
 
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
 
-    cmdState.setStageState('flat', 'done')
-    cmdState.setStageState('guiderFlat', 'done')
+    if cmdState.doFlat:
+        cmdState.setStageState('flat', 'done')
+    if cmdState.doGuiderFlat:
+        cmdState.setStageState('guiderFlat', 'done')
 
     return True
 
@@ -555,19 +560,27 @@ def expose_darks_lco(cmd, cmdState, actorState):
         return fail_expose_flats_lco('failed to turn off the FF lamp.')
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + darkTimeout,
-                               cmdState.name + '.darks')
+                               cmdState.name + '.shutter')
+    multiCmd.append(sopActor.APOGEE, Msg.APOGEE_SHUTTER, open=False)
+    multiCmd.append(sopActor.APOGEE, Msg.APOGEE_SHUTTER, open=False)
+    multiCmd.run()
 
     for nn in range(nDarks):
-        multiCmd.append(sopActor.APOGEE, Msg.EXPOSE, expTime='dark', nreads=nDarkReads)
+        multiCmd = SopMultiCommand(cmd, actorState.timeout + darkTimeout,
+                                   cmdState.name + '.darks')
+        multiCmd.append(sopActor.APOGEE, Msg.EXPOSE, expType='dark', nreads=nDarkReads)
 
-    if not multiCmd.run():
-        cmdState.setStageState('darks', 'failed')
-        cmd.fail('failed taking APOGEE darks.')
-        return False
+        if not multiCmd.run():
+            cmdState.setStageState('darks', 'failed')
+            cmd.fail('failed taking APOGEE darks.')
+            return False
+
+        cmd.warn('text="Dark {0}/{1} finished"'.format(nn + 1, nDarks))
 
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
 
     cmdState.setStageState('darks', 'done')
+
     return True
 
 
@@ -1015,8 +1028,6 @@ def start_slew(cmd, cmdState, actorState, slewTimeout, location='APO'):
 
     Returns the relevant multiCmd for precondition appending."""
 
-    cmdState.setStageState('slew', 'running')
-
     multiCmd = SopMultiCommand(cmd, slewTimeout + actorState.timeout, cmdState.name + '.slew')
 
     if location == 'APO':
@@ -1030,6 +1041,10 @@ def start_slew(cmd, cmdState, actorState, slewTimeout, location='APO'):
             return False
 
         ffScreen = True if cmdState.doScreen else False
+
+    cmdState.setStageState('slew', 'running')
+    if ffScreen:
+        cmdState.setStageState('screen', 'running')
 
     multiCmd.append(sopActor.TCC, Msg.SLEW, actorState=actorState,
                     ra=cmdState.ra, dec=cmdState.dec, rot=cmdState.rotang,
@@ -1048,11 +1063,13 @@ def _run_slew(cmd, cmdState, actorState, multiCmd):
 
     if not multiCmd.run():
         cmdState.setStageState('slew', 'failed')
-        cmdState.setStageState('screen', 'failed')
+        if cmdState.doScreen:
+            cmdState.setStageState('screen', 'failed')
         return fail_command(cmd, cmdState, 'slew', failMsg)
     else:
         cmdState.setStageState('slew', 'done')
-        cmdState.setStageState('screen', 'done')
+        if cmdState.doScreen:
+            cmdState.setStageState('screen', 'done')
         return True
 
 
@@ -1088,6 +1105,8 @@ def goto_field_apogee(cmd, cmdState, actorState, slewTimeout):
 
     if cmdState.doGuider:
         return guider_start(cmd, cmdState, actorState)
+
+    cmdState.reinitialize()
 
     return True
 

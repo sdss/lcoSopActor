@@ -576,7 +576,12 @@ class SopCmd(object):
         elif survey is sopActor.APOGEE or survey is sopActor.APOGEE2S:
             apogeeDesign = self.update_apogee_design(sopState)
             sopState.doApogeeScience.set_apogee_expTime(apogeeDesign[1])
-            sopState.gotoField.setStages(['slew', 'guider', 'cleanup'])
+            if survey is sopActor.APOGEE2S:
+                sopState.gotoField.setStages(['slew', 'screen', 'flat', 'darks',
+                                              'guiderFlat', 'guider', 'cleanup'],
+                                             setStagesTo='off')
+            else:
+                sopState.gotoField.setStages(['slew', 'guider', 'cleanup'])
             sopState.validCommands += ['doApogeeScience', 'doApogeeSkyFlats',
                                       'gotoGangChange', 'doApogeeDomeFlat']
         elif survey is sopActor.MANGA:

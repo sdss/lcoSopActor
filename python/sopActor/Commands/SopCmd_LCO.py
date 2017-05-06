@@ -10,6 +10,9 @@
 
 from __future__ import print_function, division, absolute_import
 
+import opscore.protocols.keys as keys
+import opscore.protocols.types as types
+
 import sopActor
 from sopActor import CmdState, Msg
 import sopActor.myGlobals as myGlobals
@@ -24,11 +27,12 @@ class SopCmd_LCO(SopCmd.SopCmd):
         super(SopCmd_LCO, self).__init__(actor)
 
         # Define APO specific keys.
-        self.keys.extend([])
+        self.keys.extend([keys.Key('nDarks', types.Int(), help='Number of darks to take'),
+                          keys.Key('nDarkReads', types.Int(), help='Number of readouts per dark')])
 
         # Define new commands for APO
         self.vocab = [('gotoField', '[noSlew] [noScreen] [noFlat] [noGuiderFlat] '
-                                    '[noDarks] [noGuider]'
+                                    '[noDarks] [noGuider] '
                                     '[<guiderFlatTime>] [<guiderTime>] [<nDarks>] '
                                     '[<nDarkReads>] [abort]', self.gotoField)]
 
@@ -78,6 +82,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
             cmdState.doGuiderFlat = True if 'noGuiderFlat' not in keywords else False
             cmdState.doGuider = True if 'noGuider' not in keywords else False
             cmdState.doDarks = True if 'noDarks' not in keywords else False
+            cmdState.doFlat = True if 'noFlat' not in keywords else False
 
             if 'guiderFlatTime' in keywords:
                 cmdState.guiderFlatTime = float(keywords['guiderFlatTime'].values[0])
@@ -103,6 +108,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         cmdState.doSlew = True if 'noSlew' not in keywords else False
         cmdState.doScreen = True if 'noScreen' not in keywords else False
+        cmdState.doFlat = True if 'noFlat' not in keywords else False
         cmdState.doGuiderFlat = True if 'noGuiderFlat' not in keywords else False
         cmdState.doGuider = True if 'noGuider' not in keywords else False
         cmdState.doDarks = True if 'noDarks' not in keywords else False
@@ -124,9 +130,12 @@ class SopCmd_LCO(SopCmd.SopCmd):
         if cmdState.doScreen:
             activeStages.append('screen')
 
+        if cmdState.doFlat:
+            activeStages.append('flat')
+
         if cmdState.doDarks:
             cmdState.nDarks = int(self._get_keyword_value(keywords, 'nDarks', default=2))
-            cmdState.nDarks = int(self._get_keyword_value(keywords, 'nDarkReads', default=10))
+            cmdState.nDarkReads = int(self._get_keyword_value(keywords, 'nDarkReads', default=10))
             activeStages.append('darks')
 
         if cmdState.doGuiderFlat:
@@ -150,7 +159,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         sopState = myGlobals.actorState
 
-        sopState.gotoField = CmdState.GotoFieldCmd()
+        sopState.gotoField = CmdState.GotoFieldLCOCmd()
 
         super(SopCmd_LCO, self).initCommands()
 

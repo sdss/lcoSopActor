@@ -276,7 +276,6 @@ class SlewHandler(object):
             cmdStr = 'target {0:f}, {1:f} icrs'.format(self.ra, self.dec)
             if self.ffScreen:
                 cmdStr += ' /screen'
-            print(cmdStr)
             cmdVar = call(actor='tcc', forUserCmd=cmd, cmdStr=cmdStr)
 
         if cmdVar.didFail:

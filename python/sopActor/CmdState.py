@@ -86,13 +86,16 @@ class CmdState(object):
             return self.cmd
         return myGlobals.actorState.actor.bcast
 
-    def setStages(self, allStages):
+    def setStages(self, allStages, setStagesTo='idle'):
         """Set the list of stages that are applicable, and make them idle."""
         self.allStages = allStages
-        self.stages = dict(zip(allStages, ["idle"] * len(allStages)))
+        self.stages = dict(zip(allStages, [setStagesTo] * len(allStages)))
+        for key in self.stages:
+            if key == 'cleanup':
+                self.stages[key] = 'idle'
         self.activeStages = allStages
 
-    def reinitialize(self,cmd=None,stages=None,output=True):
+    def reinitialize(self,cmd=None,stages=None,output=True, setStagesTo='idle'):
         """Re-initialize this cmdState, keeping the stages list as is."""
         self.stateText="OK"
         self.aborted = False
@@ -102,9 +105,9 @@ class CmdState(object):
         if cmd is not None:
             self.cmd = cmd
         if stages is not None:
-            self.setStages(stages)
+            self.setStages(stages, setStagesTo=setStagesTo)
         else:
-            self.setStages(self.allStages)
+            self.setStages(self.allStages, setStagesTo=setStagesTo)
         if output:
             self.genCommandKeys()
 
@@ -379,13 +382,17 @@ class GotoFieldLCOCmd(CmdState):
                                         guiderTime=5.0,
                                         guiderFlatTime=20,
                                         nDarks=2,
-                                        nDarkReadout=10))
+                                        nDarkReads=10))
 
     def reset_nonkeywords(self):
 
+        self.fakeAz = None
+        self.fakeAlt = None
+        self.fakeRotOffset = 0.0
         self.ra = 0
         self.dec = 0
         self.rotang = 0
+        self.keepOffsets = None
 
         self.doSlew = True
         self.doScreen = True
@@ -396,7 +403,7 @@ class GotoFieldLCOCmd(CmdState):
 
     def abort(self):
 
-        self.stop_tcc()
+        # self.stop_tcc()
 
         self.doSlew = False
         self.doScreen = False
@@ -405,7 +412,12 @@ class GotoFieldLCOCmd(CmdState):
         self.doFlat = False
         self.doDarks = False
 
-        super(GotoFieldCmd, self).abort()
+        super(GotoFieldLCOCmd, self).abort()
+
+    def reinitialize(self, setStagesTo='off', **kwargs):
+        """Reinitialises all but sets stages to off."""
+
+        super(GotoFieldLCOCmd, self).reinitialize(setStagesTo=setStagesTo, **kwargs)
 
 
 class DoBossCalibsCmd(CmdState):
