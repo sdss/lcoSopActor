@@ -10,10 +10,6 @@
 
 from __future__ import print_function, division, absolute_import
 
-import opscore.protocols.keys as keys
-import opscore.protocols.types as types
-from opscore.utility.qstr import qstr
-
 import sopActor
 from sopActor import CmdState, Msg
 import sopActor.myGlobals as myGlobals
@@ -31,8 +27,21 @@ class SopCmd_LCO(SopCmd.SopCmd):
         self.keys.extend([])
 
         # Define new commands for APO
-        self.vocab = [('gotoField', '[onlySlew] [noscreen] [<guiderFlatTime>] '
-                      '[<guiderTime>] [abort]', self.gotoField)]
+        self.vocab = [('gotoField', '[noSlew] [noScreen] [noFlat] [noGuiderFlat] '
+                                    '[noDarks] [noGuider]'
+                                    '[<guiderFlatTime>] [<guiderTime>] [<nDarks>] '
+                                    '[<nDarkReads>] [abort]', self.gotoField)]
+
+    def _get_keyword_value(self, keywords, param, default=None, nn=0):
+        """A convenience function to get values from keywords."""
+
+        if param in keywords:
+            return keywords[param].values[nn]
+        else:
+            if default is not None:
+                return default
+            else:
+                raise ValueError('keyword {0} is undefined and no default was given.'.format(param))
 
     def gotoField(self, cmd):
         """Slew to the current cartridge/pointing.
@@ -57,72 +66,77 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         survey = sopState.survey
 
+        if survey == sopActor.UNKNOWN:
+            cmd.fail('text="No cartridge is known to be loaded; disabling guider"')
+            return
+
         # Modify running gotoField command
         if self.modifiable(cmd, cmdState):
 
-            cmdState.doSlew = True
-            cmdState.doGuider = True if not 'onlySlew' not in keywords else False
+            cmdState.doSlew = True if 'noSlew' not in keywords else False
+            cmdState.doScreen = True if 'noScreen' not in keywords else False
+            cmdState.doGuiderFlat = True if 'noGuiderFlat' not in keywords else False
+            cmdState.doGuider = True if 'noGuider' not in keywords else False
+            cmdState.doDarks = True if 'noDarks' not in keywords else False
 
             if 'guiderFlatTime' in keywords:
                 cmdState.guiderFlatTime = float(keywords['guiderFlatTime'].values[0])
             if 'guiderTime' in keywords:
                 cmdState.guiderTime = float(keywords['guiderTime'].values[0])
+            if 'nDarks' in keywords:
+                cmdState.nDarks = float(keywords['nDarks'].values[0])
+            if 'nDarkReads' in keywords:
+                cmdState.nDarks = float(keywords['nDarkReads'].values[0])
 
             cmdState.setStageState('slew', 'pending' if cmdState.doSlew else 'off')
+            cmdState.setStageState('screen', 'pending' if cmdState.doScreen else 'off')
             cmdState.setStageState('guider', 'pending' if cmdState.doGuider else 'off')
+            cmdState.setStageState('darks', 'pending' if cmdState.doDarks else 'off')
+            cmdState.setStageState('flat', 'pending' if cmdState.doFlat else 'off')
+            cmdState.setStageState('guiderFlat', 'pending' if cmdState.doGuiderFlat else 'off')
 
             self.status(cmd, threads=False, finish=True, oneCommand='gotoField')
+
             return
 
         cmdState.reinitialize(cmd, output=False)
 
-        cmdState.doSlew = True
-        cmdState.onlySlew = True if 'onlySlew' in keywords else False
+        cmdState.doSlew = True if 'noSlew' not in keywords else False
+        cmdState.doScreen = True if 'noScreen' not in keywords else False
+        cmdState.doGuiderFlat = True if 'noGuiderFlat' not in keywords else False
+        cmdState.doGuider = True if 'noGuider' not in keywords else False
+        cmdState.doDarks = True if 'noDarks' not in keywords else False
 
-        cmdState.doGuider = True if not cmdState.onlySlew else False
+        activeStages = []
 
-        # Moves the screen in front of the telescope.
-        cmdState.ffScreen = 'on'
-        if 'noscreen' in keywords:
-            cmdState.ffScreen = 'off'
-
-
-        if cmdState.doGuider:
-            cmdState.guiderFlatTime = float(keywords['guiderFlatTime'].values[0]) \
-                                      if 'guiderFlatTime' in keywords else 20
-            cmdState.guiderTime = float(keywords['guiderTime'].values[0]) \
-                                  if 'guiderTime' in keywords else 5
-            cmdState.doGuiderFlat = cmdState.guiderFlatTime > 0
-        else:
-            cmdState.doGuiderFlat = False
-
-        if survey == sopActor.UNKNOWN:
-            cmd.warn('text="No cartridge is known to be loaded; disabling guider"')
-            cmdState.doGuider = False
-            cmdState.doGuiderFlat = False
-
-        if cmdState.doSlew:
+        if cmdState.doSlew or cmdState.doScreen:
+            # We are going to "slew" also if we want to move the screen.
+            # TODO: if doSlew is False and doScreen is True, should we use the
+            # current RA/Dec instead of the field ones?
             pointingInfo = sopState.models['platedb'].keyVarDict['pointingInfo']
             cmdState.ra = pointingInfo[3]
             cmdState.dec = pointingInfo[4]
             cmdState.rotang = 0.0  # Rotator angle; should always be 0.0
 
-        #if cmdState.onlySlew:
-        #    cmdState.ffScreen = 'off'
+            if cmdState.doSlew:
+                activeStages.append('slew')
 
-        if myGlobals.bypass.get(name='slewToField'):
-            fakeSkyPos = SopCmd.obs2Sky(cmd, cmdState.fakeAz, cmdState.fakeAlt,
-                                        cmdState.fakeRotOffset)
-            cmdState.ra = fakeSkyPos[0]
-            cmdState.dec = fakeSkyPos[1]
-            cmdState.rotang = fakeSkyPos[2]
-            cmd.warn('text="Bypass slewToField is FAKING RA DEC:  '
-                     '%g, %g /rotang=%g"' % (cmdState.ra, cmdState.dec, cmdState.rotang))
+        if cmdState.doScreen:
+            activeStages.append('screen')
 
-        activeStages = []
-        if cmdState.doSlew:
-            activeStages.append('slew')
+        if cmdState.doDarks:
+            cmdState.nDarks = int(self._get_keyword_value(keywords, 'nDarks', default=2))
+            cmdState.nDarks = int(self._get_keyword_value(keywords, 'nDarkReads', default=10))
+            activeStages.append('darks')
+
+        if cmdState.doGuiderFlat:
+            cmdState.guiderFlatTime = float(self._get_keyword_value(keywords, 'guiderFlatTime',
+                                                                    default=20))
+            cmdState.doGuiderFlat = cmdState.guiderFlatTime > 0
+            activeStages.append('guiderFlat')
+
         if cmdState.doGuider:
+            cmdState.guiderTime = float(self._get_keyword_value(keywords, 'guiderTime', default=5))
             activeStages.append('guider')
 
         activeStages.append('cleanup')  # we always may have to cleanup...

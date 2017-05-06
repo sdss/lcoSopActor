@@ -330,6 +330,7 @@ class CollimateBossCmd(CmdState):
         CmdState.__init__(self, 'collimateBoss',
                           ['collimate', 'cleanup'])
 
+
 class GotoFieldCmd(CmdState):
     def __init__(self):
         CmdState.__init__(self, 'gotoField',
@@ -367,6 +368,44 @@ class GotoFieldCmd(CmdState):
         self.doGuiderFlat = False
         self.doGuider = False
         super(GotoFieldCmd,self).abort()
+
+
+class GotoFieldLCOCmd(CmdState):
+
+    def __init__(self):
+        CmdState.__init__(self, 'gotoField',
+                          ['slew', 'screen', 'flat', 'darks', 'guiderFlat', 'guider', 'cleanup'],
+                          keywords=dict(flatTime=25,
+                                        guiderTime=5.0,
+                                        guiderFlatTime=20,
+                                        nDarks=2,
+                                        nDarkReadout=10))
+
+    def reset_nonkeywords(self):
+
+        self.ra = 0
+        self.dec = 0
+        self.rotang = 0
+
+        self.doSlew = True
+        self.doScreen = True
+        self.doGuiderFlat = True
+        self.doGuider = True
+        self.doFlat = True
+        self.doDarks = True
+
+    def abort(self):
+
+        self.stop_tcc()
+
+        self.doSlew = False
+        self.doScreen = False
+        self.doGuiderFlat = False
+        self.doGuider = False
+        self.doFlat = False
+        self.doDarks = False
+
+        super(GotoFieldCmd, self).abort()
 
 
 class DoBossCalibsCmd(CmdState):

@@ -479,28 +479,95 @@ def guider_flat(cmd, cmdState, actorState, stageName, apogeeShutter=False):
     return True
 
 
-def expose_flats_lco(cmd, cmdState, actorState, stageName):
-    """" Take guider flat and apogee flat """
+def do_lco_lamp(cmd, actorState, mode, timeout=15):
+    """Turns on/off the FF lamp at LCO."""
+
+    models = myGlobals.actorState.models
+    current_mode = models['tcc'].keyVarDict['ffPower'][0]
+
+    if current_mode == mode:
+        cmd.debug('text="FF lamps already in commanded state."')
+        return True
+
+    cmdVar = actorState.actor.cmdr.call(actor='tcc', forUserCmd=cmd,
+                                        cmdStr='lamp {0}'.format('on' if mode == 'T' else 'off'),
+                                        timeLim=timeout)
+    if cmdVar.didFail:
+        return False
+
+    return True
+
+
+def fail_expose_flats_lco(cmd, cmdState, msg):
+    """Convenience function to fail flats."""
+
+    cmdState.setStageState('flat', 'failed')
+    cmdState.setStageState('guiderFlat', 'failed')
+
+    cmd.fail(msg)
+
+    return False
+
+
+def expose_flats_lco(cmd, cmdState, actorState):
+    """ Take guider flat and apogee flat """
 
     guiderDelay = 20
     nreadsFlat = 15
-    flatTimeout = nreadsFlat * 11 # 10.8 seconds per read...
+    flatTimeout = nreadsFlat * 11  # 10.8 seconds per read...
+
+    if not do_lco_lamp(cmd, actorState, 'T', timeout=15):
+        return fail_expose_flats_lco('failed to turn on the FF lamp.')
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay + flatTimeout,
-                               '.'.join((cmdState.name + stageName, '.guiderFlat')))
+                               cmdState.name + '.flats')
 
-    multiCmd.append(sopActor.GUIDER, Msg.EXPOSE,
-                    expTime=cmdState.guiderFlatTime, expType='flat')
+    if cmdState.doGuiderFlat:
+        multiCmd.append(sopActor.GUIDER, Msg.EXPOSE,
+                        expTime=cmdState.guiderFlatTime, expType='flat')
 
-    multiCmd.append(sopActor.APOGEE, Msg.EXPOSE,
-                    expTime=None, nreads=nreadsFlat, expType='DomeFlat')
+    if cmdState.doFlat:
+        multiCmd.append(sopActor.APOGEE, Msg.EXPOSE,
+                        nreads=nreadsFlat, expType='DomeFlat')
 
-    if not handle_multiCmd(multiCmd, cmd, cmdState, stageName, 'Failed to take a guider and/or apogee flat'):
-        fail_command(cmd, cmdState, 'Failed to take a guider and/or apogee flat')
+    if not multiCmd.run():
+        return fail_expose_flats_lco('failed taking flat/guiderFlat.')
+
+    if not do_lco_lamp(cmd, actorState, 'F', timeout=15):
+        return fail_expose_flats_lco('failed to turn off the FF lamp.')
+
+    show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
+
+    cmdState.setStageState('flat', 'done')
+    cmdState.setStageState('guiderFlat', 'done')
+
+    return True
+
+
+def expose_darks_lco(cmd, cmdState, actorState):
+    """Take APOGEE darks."""
+
+    nDarks = cmdState.nDarks
+    nDarkReads = cmdState.nDarkReads
+    darkTimeout = (nDarkReads + 3) * 11
+
+    if not do_lco_lamp(cmd, actorState, 'F', timeout=15):
+        return fail_expose_flats_lco('failed to turn off the FF lamp.')
+
+    multiCmd = SopMultiCommand(cmd, actorState.timeout + darkTimeout,
+                               cmdState.name + '.darks')
+
+    for nn in range(nDarks):
+        multiCmd.append(sopActor.APOGEE, Msg.EXPOSE, expTime='dark', nreads=nDarkReads)
+
+    if not multiCmd.run():
+        cmdState.setStageState('darks', 'failed')
+        cmd.fail('failed taking APOGEE darks.')
         return False
 
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
 
+    cmdState.setStageState('darks', 'done')
     return True
 
 
@@ -956,8 +1023,13 @@ def start_slew(cmd, cmdState, actorState, slewTimeout, location='APO'):
         # At LCO, we don't do axis init.
         # start with an axis init
         multiCmd.append(SopPrecondition(sopActor.TCC, Msg.AXIS_INIT))
+    else:
 
-    ffScreen = True if cmdState.ffScreen == 'on' else False
+        if cmdState.doSlew is False and cmdState.doScreen is False:
+            cmd.warn('text="not doing a slew nor moving the FFS."')
+            return False
+
+        ffScreen = True if cmdState.doScreen else False
 
     multiCmd.append(sopActor.TCC, Msg.SLEW, actorState=actorState,
                     ra=cmdState.ra, dec=cmdState.dec, rot=cmdState.rotang,
@@ -976,8 +1048,11 @@ def _run_slew(cmd, cmdState, actorState, multiCmd):
 
     if not multiCmd.run():
         cmdState.setStageState('slew', 'failed')
+        cmdState.setStageState('screen', 'failed')
         return fail_command(cmd, cmdState, 'slew', failMsg)
     else:
+        cmdState.setStageState('slew', 'done')
+        cmdState.setStageState('screen', 'done')
         return True
 
 
@@ -1021,89 +1096,36 @@ def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     """Process a goto field sequence for an APOGEE plate at LCO."""
 
     if not is_gang_at_cart(cmd, cmdState, actorState):
-        cmd.warn("gang not at cart")
+        cmd.warn('gang not at cart')
         return False
 
-    cmd.warn("debug 1")
+    # Always slew first.
+
+    # Creates the multicommand. The returned value of start_slew could be False if,
+    # based on the cmdState we actually don't want to slew.
     multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
-    if not _run_slew(cmd, cmdState, actorState, multiCmd):
-        cmd.warn("_run_slew fail")
-        return False
-    cmd.warn("debug 2")
-    # If we only want to slew, stops here.
-    if cmdState.onlySlew:
-        cmd.warn("only slew????")
-        return True
 
-    cmd.warn("debug 3")
-    if cmdState.doGuider and cmdState.doGuiderFlat:
-        print("exposing flats")
-        if not expose_flats_lco(cmd, cmdState, actorState, 'slew'):
-            print("expose flats fail?")
+    # Runs the slew.
+    if multiCmd is not False:
+        if not _run_slew(cmd, cmdState, actorState, multiCmd):
             return False
 
-    cmd.warn("debug 4")
-    # Finally, we go to the field and removes the screen
-    cmdState.ffScreen = 'off'
-    # explicitly turn off lamps (tcc target will do this) but we want
-    # to begin darks before slewing.  Putting darks in the
-    # slew multi command will block guiding until the darks are done,
-    # and we want to be acquiring the field potentially before the darks
-    # finish!
-    # NOTE: I don't like using raw call()s here, but it's probably not worth
-    # creating a tccThread Msg just for this arc offset.
-    # print("command tcc lamp off")
-    cmdVar = actorState.actor.cmdr.call(actor="tcc", forUserCmd=cmd,
-                                        cmdStr="lamp off",
-                                        timeLim=actorState.timeout)
-    if cmdVar.didFail:
-        failMsg = 'Failed to turn ff lamp off.'
-        fail_command(cmd, cmdState, failMsg)
-        return
+    # Now we do the flats.
+    if cmdState.doFlat or cmdState.doGuiderFlat:
+        if not expose_flats_lco(cmd, cmdState, actorState):
+            return False
 
-    # put two darks on the APOGEE queue (non blocking)
-    darkReplyQueue = SopQueue("TheDarkSide", 0)
-    myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.TWODARKS, cmd,
-                                                     replyQueue = darkReplyQueue)
+    if cmdState.doDarks:
+        if not expose_darks_lco(cmd, cmdState, actorState):
+            return False
 
-    nreadsDark = 10
-    darkTimeOut = 2 * nreadsDark * 11 + 5 # roughly 10 secs per read + overhead
-    # time.sleep(1)
-    # myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
-    #                                                  nreads=nreadsDark, expType="Dark",
-    #                                                  replyQueue = darkReplyQueue)
-    cmd.warn("Added First Dark to Queue")
-    # time.sleep(1)
-    # myGlobals.actorState.queues[sopActor.APOGEE].put(Msg.EXPOSE, cmd, expTime=None,
-    #                                                      nreads=nreadsDark, expType="Dark",
-    #                                                  replyQueue = darkReplyQueue)
-    # cmd.warn("Added Second Dark to Queue")
-
-    cmd.warn('text="Wake up Neo! Initiating final slew. The LCO operator will need to approve."')
-    multiCmd = start_slew(cmd, cmdState, actorState, slewTimeout, location='LCO')
-    if not _run_slew(cmd, cmdState, actorState, multiCmd):
-        cmd.warn("second run slew failed")
-        return False
-    # when slew is done, fire up guider.
     if cmdState.doGuider:
-        pass # always do guider for now
-    cmd.warn("before starting guider")
-    guiderStarted = guider_start(cmd, cmdState, actorState, location="LCO")
-    cmd.warn("done starting guider")
-    # read from Dark Side queue to get response from darks
-    try:
-        darkMsg1 = darkReplyQueue.get(timeout=darkTimeOut).success
-    except Queue.Empty:
-        darkMsg1 = False
-    # try:
-    #     darkMsg2 = darkReplyQueue.get(timeout=darkTimeOut).success
-    # except Queue.Empty:
-    #     darkMsg2 = False
+        if not guider_start(cmd, cmdState, actorState, location='LCO'):
+            cmdState.setStageState('guider', 'failed')
+            return fail_command(cmd, cmdState, 'failed starting the guider')
+        cmdState.setStageState('guider', 'done')
 
-    darkMsg2 = True
-    cmd.warn("guiderStarted: %s dark1,2 success: [%s, %s] "%(guiderStarted, darkMsg1, darkMsg2))
-    return not False in [guiderStarted, darkMsg1, darkMsg2]
-
+    return finish_command(cmd, cmdState, actorState, 'suprisingly, we got to the field.')
 
 
 def goto_field_boss(cmd, cmdState, actorState, slewTimeout):
