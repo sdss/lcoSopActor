@@ -414,10 +414,10 @@ class GotoFieldLCOCmd(CmdState):
 
         super(GotoFieldLCOCmd, self).abort()
 
-    def reinitialize(self, setStagesTo='off', **kwargs):
+    def reinitialize(self, cmd, setStagesTo='off', **kwargs):
         """Reinitialises all but sets stages to off."""
 
-        super(GotoFieldLCOCmd, self).reinitialize(setStagesTo=setStagesTo, **kwargs)
+        super(GotoFieldLCOCmd, self).reinitialize(cmd=cmd, setStagesTo=setStagesTo, **kwargs)
 
 
 class DoBossCalibsCmd(CmdState):
