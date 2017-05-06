@@ -1114,6 +1114,7 @@ def goto_field_apogee(cmd, cmdState, actorState, slewTimeout):
 def goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout):
     """Process a goto field sequence for an APOGEE plate at LCO."""
 
+    print('goto_field_apogee_lco')
     if not is_gang_at_cart(cmd, cmdState, actorState):
         cmd.warn('gang not at cart')
         return False

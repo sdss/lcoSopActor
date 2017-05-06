@@ -402,8 +402,9 @@ class GotoFieldLCOCmd(CmdState):
         self.doDarks = True
 
     def abort(self):
-
-        # self.stop_tcc()
+        print('stage is ', self.stages)
+        if self.stages['slew'].lower() == 'running':
+            self.stop_tcc()
 
         self.doSlew = False
         self.doScreen = False
@@ -413,6 +414,18 @@ class GotoFieldLCOCmd(CmdState):
         self.doDarks = False
 
         super(GotoFieldLCOCmd, self).abort()
+
+        self.cmd.fail('aborted command.')
+
+    def stop_tcc(self):
+        """Stop current TCC motion."""
+
+        cmdVar = myGlobals.actorState.actor.cmdr.call(actor='tcc', forUserCmd=self.cmd,
+                                                      cmdStr='target 0,0 icrs /abort')
+
+        # It seems the abort command does its thing but didFail is True.
+        if cmdVar.didFail:
+            self.cmd.warn('text="Failed to abort slew. This is probably ok."')
 
     def reinitialize(self, cmd, setStagesTo='off', **kwargs):
         """Reinitialises all but sets stages to off."""

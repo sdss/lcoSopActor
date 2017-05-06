@@ -77,6 +77,8 @@ class SopCmd_LCO(SopCmd.SopCmd):
         # Modify running gotoField command
         if self.modifiable(cmd, cmdState):
 
+            cmd.warn('text="modifying gotoField command"')
+
             cmdState.doSlew = True if 'noSlew' not in keywords else False
             cmdState.doScreen = True if 'noScreen' not in keywords else False
             cmdState.doGuiderFlat = True if 'noGuiderFlat' not in keywords else False

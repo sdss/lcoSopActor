@@ -115,11 +115,9 @@ class SopCmd(object):
         """Stop an active cmdState, failing if there's nothing to stop."""
         if self.modifiable(cmd, cmdState):
             cmdState.abort()
-            if cmdState.cmd:
-                cmdState.cmd.fail('aborted command.')
             self.status(cmd, threads=False, finish=True, oneCommand=name)
         else:
-            cmd.fail('text="No %s command is active"'%(name))
+            cmd.fail('text="No %s command is active"' % (name))
 
     def modifiable(self, cmd, cmdState):
         return cmdState.cmd and cmdState.cmd.isAlive()
