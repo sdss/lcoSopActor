@@ -31,8 +31,8 @@ class SopCmd_LCO(SopCmd.SopCmd):
                           keys.Key('nDarkReads', types.Int(), help='Number of readouts per dark')])
 
         # Define new commands for APO
-        self.vocab = [('gotoField', '[noSlew] [noScreen] [noFlat] [noGuiderFlat] '
-                                    '[noDarks] [noGuider] '
+        self.vocab = [('gotoField', '[slew] [screen] [flat] [guiderFlat] '
+                                    '[darks] [guider] '
                                     '[<guiderFlatTime>] [<guiderTime>] [<nDarks>] '
                                     '[<nDarkReads>] [abort]', self.gotoField)]
 
@@ -79,12 +79,12 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
             cmd.warn('text="modifying gotoField command"')
 
-            cmdState.doSlew = True if 'noSlew' not in keywords else False
-            cmdState.doScreen = True if 'noScreen' not in keywords else False
-            cmdState.doGuiderFlat = True if 'noGuiderFlat' not in keywords else False
-            cmdState.doGuider = True if 'noGuider' not in keywords else False
-            cmdState.doDarks = True if 'noDarks' not in keywords else False
-            cmdState.doFlat = True if 'noFlat' not in keywords else False
+            cmdState.doSlew = True if 'slew' in keywords else False
+            cmdState.doScreen = True if 'screen' in keywords else False
+            cmdState.doGuiderFlat = True if 'guiderFlat' in keywords else False
+            cmdState.doGuider = True if 'guider' in keywords else False
+            cmdState.doDarks = True if 'darks' in keywords else False
+            cmdState.doFlat = True if 'flat' in keywords else False
 
             if 'guiderFlatTime' in keywords:
                 cmdState.guiderFlatTime = float(keywords['guiderFlatTime'].values[0])
@@ -108,12 +108,12 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         cmdState.reinitialize(cmd, output=False)
 
-        cmdState.doSlew = True if 'noSlew' not in keywords else False
-        cmdState.doScreen = True if 'noScreen' not in keywords else False
-        cmdState.doFlat = True if 'noFlat' not in keywords else False
-        cmdState.doGuiderFlat = True if 'noGuiderFlat' not in keywords else False
-        cmdState.doGuider = True if 'noGuider' not in keywords else False
-        cmdState.doDarks = True if 'noDarks' not in keywords else False
+        cmdState.doSlew = True if 'slew' in keywords else False
+        cmdState.doScreen = True if 'screen' in keywords else False
+        cmdState.doGuiderFlat = True if 'guiderFlat' in keywords else False
+        cmdState.doGuider = True if 'guider' in keywords else False
+        cmdState.doDarks = True if 'darks' in keywords else False
+        cmdState.doFlat = True if 'flat' in keywords else False
 
         activeStages = []
 
