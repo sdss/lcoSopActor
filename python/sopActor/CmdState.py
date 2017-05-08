@@ -402,7 +402,7 @@ class GotoFieldLCOCmd(CmdState):
         self.doDarks = True
 
     def abort(self):
-        print('stage is ', self.stages)
+
         if self.stages['slew'].lower() == 'running':
             self.stop_tcc()
 
