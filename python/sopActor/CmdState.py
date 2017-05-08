@@ -377,7 +377,7 @@ class GotoFieldLCOCmd(CmdState):
 
     def __init__(self):
         CmdState.__init__(self, 'gotoField',
-                          ['slew', 'screen', 'flat', 'darks', 'guiderFlat', 'guider', 'cleanup'],
+                          ['slew', 'screen', 'flat', 'guiderFlat', 'darks', 'guider', 'cleanup'],
                           keywords=dict(flatTime=25,
                                         guiderTime=5.0,
                                         guiderFlatTime=20,
