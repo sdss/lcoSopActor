@@ -520,7 +520,7 @@ def expose_flats_lco(cmd, cmdState, actorState):
     flatTimeout = nreadsFlat * 11  # 10.8 seconds per read...
 
     if not do_lco_lamp(cmd, actorState, 'T', timeout=15):
-        return fail_expose_flats_lco('failed to turn on the FF lamp.')
+        return fail_expose_flats_lco(cmd, cmdState, 'failed to turn on the FF lamp.')
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + guiderDelay + flatTimeout,
                                cmdState.name + '.flats')
@@ -534,10 +534,10 @@ def expose_flats_lco(cmd, cmdState, actorState):
                         nreads=nreadsFlat, expType='DomeFlat')
 
     if not multiCmd.run():
-        return fail_expose_flats_lco('failed taking flat/guiderFlat.')
+        return fail_expose_flats_lco(cmd, cmdState, 'failed taking flat/guiderFlat.')
 
     if not do_lco_lamp(cmd, actorState, 'F', timeout=15):
-        return fail_expose_flats_lco('failed to turn off the FF lamp.')
+        return fail_expose_flats_lco(cmd, cmdState, 'failed to turn off the FF lamp.')
 
     show_status(cmdState.cmd, cmdState, actorState.actor, oneCommand=cmdState.name)
 
@@ -557,7 +557,7 @@ def expose_darks_lco(cmd, cmdState, actorState):
     darkTimeout = (nDarkReads + 3) * 11
 
     if not do_lco_lamp(cmd, actorState, 'F', timeout=15):
-        return fail_expose_flats_lco('failed to turn off the FF lamp.')
+        return fail_expose_flats_lco(cmd, cmdState, 'failed to turn off the FF lamp.')
 
     multiCmd = SopMultiCommand(cmd, actorState.timeout + darkTimeout,
                                cmdState.name + '.shutter')
