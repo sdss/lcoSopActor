@@ -516,7 +516,7 @@ def expose_flats_lco(cmd, cmdState, actorState):
     """ Take guider flat and apogee flat """
 
     guiderDelay = 20
-    nreadsFlat = 15
+    nreadsFlat = cmdState.nFlatReads
     flatTimeout = nreadsFlat * 11  # 10.8 seconds per read...
 
     if not do_lco_lamp(cmd, actorState, 'T', timeout=15):

@@ -33,8 +33,8 @@ class SopCmd_LCO(SopCmd.SopCmd):
         # Define new commands for APO
         self.vocab = [('gotoField', '[slew] [screen] [flat] [guiderFlat] '
                                     '[darks] [guider] '
-                                    '[<guiderFlatTime>] [<guiderTime>] [<nDarks>] '
-                                    '[<nDarkReads>] [abort]', self.gotoField)]
+                                    '[<guiderFlatTime>] [<guiderTime>] [<nFlatReads>] '
+                                    '[<nDarks>] [<nDarkReads>] [abort]', self.gotoField)]
 
     def _get_keyword_value(self, keywords, param, default=None, nn=0):
         """A convenience function to get values from keywords."""
@@ -90,10 +90,12 @@ class SopCmd_LCO(SopCmd.SopCmd):
                 cmdState.guiderFlatTime = float(keywords['guiderFlatTime'].values[0])
             if 'guiderTime' in keywords:
                 cmdState.guiderTime = float(keywords['guiderTime'].values[0])
+            if 'nDarkReads' in keywords:
+                cmdState.nDarks = float(keywords['nDarkReads'].values[0])
             if 'nDarks' in keywords:
                 cmdState.nDarks = float(keywords['nDarks'].values[0])
             if 'nDarkReads' in keywords:
-                cmdState.nDarks = float(keywords['nDarkReads'].values[0])
+                cmdState.nDarkReads = float(keywords['nDarkReads'].values[0])
 
             cmdState.setStageState('slew', 'pending' if cmdState.doSlew else 'off')
             cmdState.setStageState('screen', 'pending' if cmdState.doScreen else 'off')
@@ -133,6 +135,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
             activeStages.append('screen')
 
         if cmdState.doFlat:
+            cmdState.nFlatReads = int(self._get_keyword_value(keywords, 'nFlatReads', default=8))
             activeStages.append('flat')
 
         if cmdState.doDarks:
@@ -142,7 +145,7 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         if cmdState.doGuiderFlat:
             cmdState.guiderFlatTime = float(self._get_keyword_value(keywords, 'guiderFlatTime',
-                                                                    default=20))
+                                                                    default=6))
             cmdState.doGuiderFlat = cmdState.guiderFlatTime > 0
             activeStages.append('guiderFlat')
 
