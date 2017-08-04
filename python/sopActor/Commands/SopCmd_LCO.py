@@ -28,7 +28,8 @@ class SopCmd_LCO(SopCmd.SopCmd):
 
         # Define APO specific keys.
         self.keys.extend([keys.Key('nDarks', types.Int(), help='Number of darks to take'),
-                          keys.Key('nDarkReads', types.Int(), help='Number of readouts per dark')])
+                          keys.Key('nDarkReads', types.Int(), help='Number of readouts per dark'),
+                          keys.Key('nFlatReads', types.Int(), help='Number of readouts per flat')])
 
         # Define new commands for APO
         self.vocab = [('gotoField', '[slew] [screen] [flat] [guiderFlat] '
