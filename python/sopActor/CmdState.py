@@ -382,7 +382,8 @@ class GotoFieldLCOCmd(CmdState):
                                         guiderTime=5.0,
                                         guiderFlatTime=20,
                                         nDarks=2,
-                                        nDarkReads=10))
+                                        nDarkReads=10,
+                                        nFlatReads=8))
 
     def reset_nonkeywords(self):
 
