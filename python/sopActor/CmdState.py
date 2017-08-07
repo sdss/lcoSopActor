@@ -380,7 +380,7 @@ class GotoFieldLCOCmd(CmdState):
                           ['slew', 'screen', 'flat', 'guiderFlat', 'darks', 'guider', 'cleanup'],
                           keywords=dict(flatTime=25,
                                         guiderTime=5.0,
-                                        guiderFlatTime=20,
+                                        guiderFlatTime=6,
                                         nDarks=2,
                                         nDarkReads=10,
                                         nFlatReads=8))
