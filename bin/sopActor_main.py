@@ -13,6 +13,7 @@
 from __future__ import print_function, division, absolute_import
 
 import sys
+import sopActor
 from sopActor import Msg, SopActor
 
 
@@ -22,4 +23,4 @@ if __name__ == "__main__":
     location = None if len(sys.argv) == 1 else sys.argv[1]
     sop = SopActor.SopActor.newActor(location=location)
 
-    sop.run(Msg=Msg)
+    sop.run(Msg=Msg, queueClass=sopActor.Queue)
