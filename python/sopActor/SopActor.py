@@ -129,7 +129,7 @@ class SopActor(actorcore.Actor.SDSSActor):
 
         # Explicitly load other actor models.
         self.models = {}
-        for actor in self._threads_to_load:
+        for actor in self._models_to_load:
             self.models[actor] = opscore.actor.model.Model(actor)
 
         self.actorState = actorcore.Actor.ActorState(self, self.models)
