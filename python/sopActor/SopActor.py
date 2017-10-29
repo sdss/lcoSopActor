@@ -65,6 +65,11 @@ class SopActor(actorcore.Actor.SDSSActor):
 
     __metaclass__ = abc.ABCMeta
 
+    _threads_to_load = ['master', 'boss', 'apogee', 'apogeeScript', 'script',
+                        'guider', 'gcamera', 'ff', 'hgcd', 'ne', 'uv', 'wht',
+                        'ffs', 'tcc', 'slew']
+    _models_to_load = ['boss', 'guider', 'platedb', 'mcp', 'sop', 'tcc', 'apogee']
+
     @staticmethod
     def newActor(location=None, **kwargs):
         """Return the version of the actor based on our location."""
@@ -100,7 +105,7 @@ class SopActor(actorcore.Actor.SDSSActor):
         sopActor.myGlobals.bypass = Bypass()
 
         # Define the Thread list
-        self.threadList = [
+        full_thread_list = [
             ('master', sopActor.MASTER, masterThread),
             ('boss', sopActor.BOSS, bossThread),
             ('apogee', sopActor.APOGEE, apogeeThread),
@@ -117,10 +122,14 @@ class SopActor(actorcore.Actor.SDSSActor):
             ('tcc', sopActor.TCC, tccThread),
             ('slew', sopActor.SLEW, slewThread)]
 
+        # By defining a _threads_to_load attribute in a subclass of SopActor,
+        # we can configure which threads are loaded at each location.
+        self.threadList = [thread for thread in full_thread_list
+                           if thread[0] in self._threads_to_load]
+
         # Explicitly load other actor models.
         self.models = {}
-        for actor in ['boss', 'guider', 'platedb', 'mcp',
-                      'sop', 'tcc', 'apogee']:
+        for actor in self._threads_to_load:
             self.models[actor] = opscore.actor.model.Model(actor)
 
         self.actorState = actorcore.Actor.ActorState(self, self.models)
@@ -129,8 +138,7 @@ class SopActor(actorcore.Actor.SDSSActor):
         myGlobals.actorState = self.actorState
 
         # This is the default set of commands, valid both at APO and LCO
-        self.actorState.actor.commandSets['SopCmd_' +
-                                          self.location].initCommands()
+        self.actorState.actor.commandSets['SopCmd_' + self.location].initCommands()
 
         self.actorState.timeout = 60  # timeout on message queues
 
@@ -147,6 +155,7 @@ class SopActor(actorcore.Actor.SDSSActor):
 
 class SopActorAPO(SopActor):
     """APO version of this actor."""
+
     location = 'APO'
 
     def _readWarmUpTimes(self):
@@ -166,7 +175,12 @@ class SopActorAPO(SopActor):
 
 class SopActorLCO(SopActor):
     """LCO version of this actor."""
+
     location = 'LCO'
+
+    _threads_to_load = ['master', 'apogee', 'apogeeScript', 'script', 'guider',
+                        'gcamera', 'tcc', 'slew']
+    _models_to_load = ['guider', 'platedb', 'sop', 'tcc', 'apogee']
 
     def _readWarmUpTimes(self):
         """Sets the warm up times for the lamps from the config file."""
@@ -174,7 +188,8 @@ class SopActorLCO(SopActor):
 
 
 class SopActorLocal(SopActor):
-    '''Local Version of this actor '''
+    """Local Version of this actor"""
+
     location = 'LOCAL'
 
     def _readWarmUpTimes(self):
