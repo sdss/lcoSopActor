@@ -1,6 +1,7 @@
 import Queue as _Queue
 import threading
 import re
+import six
 
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
@@ -138,6 +139,8 @@ class Queue(_Queue.PriorityQueue):
     def __init__(self, name, *args):
         _Queue.Queue.__init__(self, *args)
         self.name = name
+
+        assert isinstance(self.name, six.string_types), 'Queue name must be a string.'
 
     def __str__(self):
         return self.name
