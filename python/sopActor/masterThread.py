@@ -1323,9 +1323,6 @@ def check_cart(actorState):
 
     instrumentNum = models[cartActor].keyVarDict['instrumentNum'][0]
 
-    # LCOHACK: hardcoding cart number for testing while TCC is down
-    # instrumentNum = instrumentNum or 20
-
     if instrumentNum != guiderCartLoaded:
         failMsg = ('guider cart is {0} while {1} cart is {2}.'
                    .format(guiderCartLoaded, cartActor.upper(), instrumentNum))
@@ -1338,7 +1335,6 @@ def goto_field(cmd, cmdState, actorState):
     """Start a goto field sequence, with behavior depending on the current survey."""
 
     # Slew to field
-    # LCO HACK ! not a hack but do we want to increase slewTimeout?  du Pont is very slow.
     slewTimeout = 180
     finishMsg = 'On field.'
 
@@ -1353,7 +1349,7 @@ def goto_field(cmd, cmdState, actorState):
         success = goto_field_apogee(cmd, cmdState, actorState, slewTimeout)
     elif actorState.survey == sopActor.APOGEE2S:
         # Uses a longer slewTimeout for LCO
-        success = goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout * 2)
+        success = goto_field_apogee_lco(cmd, cmdState, actorState, slewTimeout * 3)
     elif actorState.survey == sopActor.BOSS or actorState.survey == sopActor.MANGA:
         success = goto_field_boss(cmd, cmdState, actorState, slewTimeout)
     elif actorState.survey == sopActor.APOGEEMANGA:
