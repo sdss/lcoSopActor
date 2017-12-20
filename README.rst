@@ -1,6 +1,6 @@
-========
-sopActor
-========
+===========
+lcoSopActor
+===========
 
 SOP is the "Spectrograph Operating Program". sopActor manages high-level user
 commands for observing tasks like "gotoField", "doBossScience",
@@ -12,3 +12,5 @@ the commands changes.
 
 Configuation (e.g. hosts/ports/logging directories) are found in the ``etc/``
 directory.
+
+This is the fork for LCO.
